@@ -1,0 +1,26 @@
+{
+    "id": "0C828DF3",
+    "path": "~/r-notebooks/nanostring_cpp_opti/just_rcpp/GeoDiff_SMI.R",
+    "project_path": "GeoDiff_SMI.R",
+    "type": "r_source",
+    "hash": "0",
+    "contents": "",
+    "dirty": true,
+    "created": 1635264843620.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "110,39",
+        "scrollLine": "74"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1635204878,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1635269738821,
+    "read_only": false,
+    "read_only_alternatives": []
+}

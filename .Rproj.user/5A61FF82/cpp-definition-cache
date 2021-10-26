@@ -1,0 +1,274 @@
+[
+    {
+        "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/GeoDiff.h",
+        "file_last_write": 1634598790.0,
+        "definitions": []
+    },
+    {
+        "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthDEOptPara.cpp",
+        "file_last_write": 1635204293.0,
+        "definitions": [
+            {
+                "usr": "c:@F@dnbinom_mu_vec#$@N@arma@S@Col>#d#d#S0_#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "dnbinom_mu_vec(arma::vec, double, arma::vec, int)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthDEOptPara.cpp",
+                "line": 18,
+                "column": 11
+            },
+            {
+                "usr": "c:@S@NBthDE_paranll",
+                "kind": 2,
+                "parent_name": "",
+                "name": "NBthDE_paranll",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthDEOptPara.cpp",
+                "line": 31,
+                "column": 7
+            },
+            {
+                "usr": "c:@S@NBthDE_paranll@F@operator()#&1$@N@arma@S@Col>#d#",
+                "kind": 7,
+                "parent_name": "NBthDE_paranll",
+                "name": "operator(const arma::vec &)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthDEOptPara.cpp",
+                "line": 42,
+                "column": 10
+            },
+            {
+                "usr": "c:@S@NBthDE_paranll@F@Gradient#&1$@N@arma@S@Col>#d#&S1_#",
+                "kind": 7,
+                "parent_name": "NBthDE_paranll",
+                "name": "Gradient(const arma::vec &, arma::vec &)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthDEOptPara.cpp",
+                "line": 77,
+                "column": 8
+            },
+            {
+                "usr": "c:@F@NBthDE_paraOptfeat#&$@N@arma@S@Mat>#d#$@N@arma@S@Col>#d#S2_#S2_#S0_#d#d#&S2_#b#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "NBthDE_paraOptfeat(arma::mat &, arma::vec, arma::vec, arma::vec, arma::mat &, double, double, arma::vec &, bool)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthDEOptPara.cpp",
+                "line": 118,
+                "column": 6
+            },
+            {
+                "usr": "c:@F@NBthDE_paraOptall#&$@N@arma@S@Mat>#d#S0_#&$@N@arma@S@Col>#d#S2_#S0_#S2_#d#S2_#b#b#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "NBthDE_paraOptall(arma::mat &, arma::mat &, arma::vec &, arma::vec &, arma::mat &, arma::vec &, double, arma::vec &, bool, bool)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthDEOptPara.cpp",
+                "line": 183,
+                "column": 6
+            }
+        ]
+    },
+    {
+        "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthmDEGrad.cpp",
+        "file_last_write": 1634598790.0,
+        "definitions": [
+            {
+                "usr": "c:@F@NBthmDE_grad#&$@N@arma@S@Col>#d#&$@N@arma@S@Mat>#d#S2_#S0_#S0_#S0_#S0_#S2_#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "NBthmDE_grad(arma::vec &, arma::mat &, arma::mat &, arma::vec &, arma::vec &, arma::vec &, arma::vec &, arma::mat &, double, double)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthmDEGrad.cpp",
+                "line": 18,
+                "column": 11
+            },
+            {
+                "usr": "c:@F@NBthmDE_gradM#&$@N@arma@S@Col>#d#&$@N@arma@S@Mat>#d#S2_#S0_#S2_#S0_#S0_#S2_#d#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "NBthmDE_gradM(arma::vec &, arma::mat &, arma::mat &, arma::vec &, arma::mat &, arma::vec &, arma::vec &, arma::mat &, double, double)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthmDEGrad.cpp",
+                "line": 51,
+                "column": 11
+            }
+        ]
+    },
+    {
+        "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthmDEMH.cpp",
+        "file_last_write": 1634598790.0,
+        "definitions": [
+            {
+                "usr": "c:@S@NBthmDE_unll",
+                "kind": 2,
+                "parent_name": "",
+                "name": "NBthmDE_unll",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthmDEMH.cpp",
+                "line": 20,
+                "column": 7
+            },
+            {
+                "usr": "c:@S@NBthmDE_unll@F@operator()#&1$@N@arma@S@Col>#d#",
+                "kind": 7,
+                "parent_name": "NBthmDE_unll",
+                "name": "operator(const arma::vec &)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthmDEMH.cpp",
+                "line": 29,
+                "column": 10
+            },
+            {
+                "usr": "c:@F@condi_u#&$@N@arma@S@Mat>#d#I#&$@N@arma@S@Col>#d#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "condi_u(arma::mat &, int, arma::vec &, int)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthmDEMH.cpp",
+                "line": 56,
+                "column": 6
+            },
+            {
+                "usr": "c:@F@NBthmDE_mh#&$@N@arma@S@Mat>#d#&$@N@arma@S@Col>#d#S0_#S0_#S2_#S2_#S2_#S2_#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "NBthmDE_mh(arma::mat &, arma::vec &, arma::mat &, arma::mat &, arma::vec &, arma::vec &, arma::vec &, arma::vec &, int)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthmDEMH.cpp",
+                "line": 98,
+                "column": 11
+            }
+        ]
+    },
+    {
+        "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthmDEOptPara.cpp",
+        "file_last_write": 1634598790.0,
+        "definitions": [
+            {
+                "usr": "c:@S@NBthmDE_fparanll",
+                "kind": 2,
+                "parent_name": "",
+                "name": "NBthmDE_fparanll",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthmDEOptPara.cpp",
+                "line": 21,
+                "column": 7
+            },
+            {
+                "usr": "c:@S@NBthmDE_fparanll@F@operator()#&1$@N@arma@S@Col>#d#",
+                "kind": 7,
+                "parent_name": "NBthmDE_fparanll",
+                "name": "operator(const arma::vec &)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthmDEOptPara.cpp",
+                "line": 33,
+                "column": 10
+            },
+            {
+                "usr": "c:@S@NBthmDE_fparanll@F@Gradient#&1$@N@arma@S@Col>#d#&S1_#",
+                "kind": 7,
+                "parent_name": "NBthmDE_fparanll",
+                "name": "Gradient(const arma::vec &, arma::vec &)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthmDEOptPara.cpp",
+                "line": 70,
+                "column": 8
+            },
+            {
+                "usr": "c:@F@NBthmDE_fparaOptfeat#&$@N@arma@S@Mat>#d#S0_#&$@N@arma@S@Col>#d#S2_#S2_#S0_#d#d#S0_#S2_#b#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "NBthmDE_fparaOptfeat(arma::mat &, arma::mat &, arma::vec &, arma::vec &, arma::vec &, arma::mat &, double, double, arma::mat &, arma::vec &, bool)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthmDEOptPara.cpp",
+                "line": 144,
+                "column": 6
+            }
+        ]
+    },
+    {
+        "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthmDEOptU.cpp",
+        "file_last_write": 1634598790.0,
+        "definitions": [
+            {
+                "usr": "c:@S@NBthDE_unll",
+                "kind": 2,
+                "parent_name": "",
+                "name": "NBthDE_unll",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthmDEOptU.cpp",
+                "line": 18,
+                "column": 7
+            },
+            {
+                "usr": "c:@S@NBthDE_unll@F@operator()#&1$@N@arma@S@Col>#d#",
+                "kind": 7,
+                "parent_name": "NBthDE_unll",
+                "name": "operator(const arma::vec &)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthmDEOptU.cpp",
+                "line": 28,
+                "column": 10
+            },
+            {
+                "usr": "c:@F@NBthmDE_uOpt#&$@N@arma@S@Col>#d#&$@N@arma@S@Mat>#d#S2_#S0_#S0_#S0_#S0_#S2_#b#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "NBthmDE_uOpt(arma::vec &, arma::mat &, arma::mat &, arma::vec &, arma::vec &, arma::vec &, arma::vec &, arma::mat &, bool)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthmDEOptU.cpp",
+                "line": 61,
+                "column": 6
+            }
+        ]
+    },
+    {
+        "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/PoisthNormOptPara.cpp",
+        "file_last_write": 1634598790.0,
+        "definitions": [
+            {
+                "usr": "c:@S@PoisthNorm_paranll",
+                "kind": 2,
+                "parent_name": "",
+                "name": "PoisthNorm_paranll",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/PoisthNormOptPara.cpp",
+                "line": 96,
+                "column": 7
+            },
+            {
+                "usr": "c:@S@PoisthNorm_paranll@F@operator()#&1$@N@arma@S@Col>#d#",
+                "kind": 7,
+                "parent_name": "PoisthNorm_paranll",
+                "name": "operator(const arma::vec &)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/PoisthNormOptPara.cpp",
+                "line": 106,
+                "column": 10
+            },
+            {
+                "usr": "c:@S@PoisthNorm_paranll@F@Gradient#&1$@N@arma@S@Col>#d#&S1_#",
+                "kind": 7,
+                "parent_name": "PoisthNorm_paranll",
+                "name": "Gradient(const arma::vec &, arma::vec &)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/PoisthNormOptPara.cpp",
+                "line": 125,
+                "column": 8
+            },
+            {
+                "usr": "c:@F@PoisthNorm_paraOptfeat#$@N@arma@S@Col>#d#&$@N@arma@S@Mat>#d#S0_#S0_#S1_#d#d#b#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "PoisthNorm_paraOptfeat(arma::vec, arma::mat &, arma::vec, arma::vec, arma::mat &, double, double, bool)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/PoisthNormOptPara.cpp",
+                "line": 148,
+                "column": 6
+            },
+            {
+                "usr": "c:@F@PoisthNorm_paraOptall#&$@N@arma@S@Mat>#d#S0_#&$@N@arma@S@Col>#d#S2_#S0_#S2_#d#b#b#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "PoisthNorm_paraOptall(arma::mat &, arma::mat &, arma::vec &, arma::vec &, arma::mat &, arma::vec &, double, bool, bool)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/PoisthNormOptPara.cpp",
+                "line": 203,
+                "column": 6
+            }
+        ]
+    },
+    {
+        "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/dnbinom_mu_vec.cpp",
+        "file_last_write": 1635195071.0,
+        "definitions": [
+            {
+                "usr": "c:@F@dnbinom_mu_vec#$@N@arma@S@Col>#d#d#S0_#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "dnbinom_mu_vec(arma::vec, double, arma::vec, int)",
+                "file": "/Users/nedbooker/r-notebooks/nanostring_cpp_opti/just_rcpp/src/dnbinom_mu_vec.cpp",
+                "line": 7,
+                "column": 11
+            }
+        ]
+    }
+]

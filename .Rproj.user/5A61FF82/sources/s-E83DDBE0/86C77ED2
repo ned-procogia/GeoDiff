@@ -1,0 +1,26 @@
+{
+    "id": "86C77ED2",
+    "path": "~/r-notebooks/nanostring_cpp_opti/just_rcpp/src/PoisthNormOptPara.cpp",
+    "project_path": "src/PoisthNormOptPara.cpp",
+    "type": "cpp",
+    "hash": "3409850147",
+    "contents": "",
+    "dirty": false,
+    "created": 1635268358147.0,
+    "source_on_save": false,
+    "relative_order": 9,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "0,0",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1634598790,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1634598790,
+    "read_only": false,
+    "read_only_alternatives": []
+}

@@ -1,0 +1,596 @@
+---
+title: "Workflow_WTA"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Workflow_WTA}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Installation 
+
+```{r installation, eval=FALSE}
+if(!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("GeoDiff")
+```
+
+
+## Overview
+
+This vignette demonstrates the use of the GeoDiff package on NanoString GeoMx Digital Spatial Profiler 
+(DSP) data. This package can be used for background modeling, target and sample QC, normalization 
+and differential expression analysis. 
+
+We'll analyze a NanoString GeoMx DSP dataset of diseased vs healthy kidney tissue using the Human 
+Whole Transcriptome (WTA) panel. Seven slides were analyzed, 4 diseased and 3 healthy. Regions of 
+Interest (ROI) were focused two different parts of a kidney’s structure: tubules or glomeruli. 
+
+
+## Data preparation
+
+First we will load the necessary packages 
+
+```{r setup, results='hide', warning=FALSE, message=FALSE}
+library(GeoDiff)
+library(dplyr)
+library(ggplot2)
+library(NanoStringNCTools)
+library(GeomxTools)
+library(Biobase)
+library(reshape2)
+```
+
+Now let's load our data and examine it. 
+
+```{r load data}
+data("kidney")
+
+kidney
+
+head(pData(kidney))
+
+table(pData(kidney)$`slide name`)
+table(pData(kidney)$region)
+```
+
+This data is stored in a NanoStringGeoMxSet object. For more examples on how to work with this data
+please look at `vignette("Developer_Introduction_to_the_NanoStringGeoMxSet", package = "GeomxTools")`
+or `vignette("GeomxTools_RNA-NGS_Analysis", package = "GeoMxWorkflows")`
+
+
+In order to make the vignette run in a reasonable amount of time, we subset the data.
+We subset 16 ROIs with a similar distribution to the entire dataset: 8 ROIs from the disease3 and
+normal3 slides, 4 glomerulus and 4 tubule ROIs from each.
+
+```{r}
+kidney <- kidney[, which(kidney$`slide name` %in% c("disease3", "normal3"))][, c(1:4, 48:51,
+                                                                                 60:63, 115:118)]
+table(kidney$region, kidney$`slide name`)
+table(kidney$`slide name`, kidney$class)
+```
+
+
+## Background Modeling
+
+Poisson background model using negative probes.
+
+The background model works on the probe level data with all of the negative probes.
+Please do not use aggregateCounts from GeomxTools before modeling.
+```{r, probe level}
+featureType(kidney)
+
+paste("## of Negative Probes:", sum(fData(kidney)$Negative))
+```
+
+
+This model estimates a feature factor for each negative probe and a background size factor for each ROI. 
+
+```{r}
+kidney <- fitPoisBG(kidney)
+
+summary(pData(kidney)$sizefact)
+summary(fData(kidney)$featfact[fData(kidney)$Negative])
+```
+
+After running the model, we can diagnose it and see if there are any issues in the dataset. One key metric for Poisson model is the dispersion. When dispersion is big, it is called over-dispersion which often indicates batch effect or large
+outliers in the data.
+
+```{r}
+set.seed(123)
+kidney_diag <- diagPoisBG(kidney)
+
+notes(kidney_diag)$disper
+```
+
+If the dispersion is >2, one of these factors might be present in the data. We can check for outlier
+ROIs. People can choose to set outliers to be missing values and rerun the Poisson Background model. Since the dispersion is within range here, the model will not get run.
+
+```{r, eval=FALSE}
+which(assayDataElement(kidney_diag, "low_outlier") == 1, arr.ind = TRUE)
+which(assayDataElement(kidney_diag, "up_outlier") == 1, arr.ind = TRUE)
+```
+
+Or if a batch effect is assumed, the poisson model can be adjusted to take different groups into
+account. Here we are grouping the ROIs by slide.
+```{r}
+kidney <- fitPoisBG(kidney, groupvar = "slide name")
+```
+
+The diagnosis of this model shows that when splitting by slide we similar results as without splitting in this dataset.
+
+```{r}
+set.seed(123)
+kidney_diag <- diagPoisBG(kidney, split = TRUE)
+notes(kidney_diag)$disper_sp
+```
+
+## Aggregate function
+
+After subsetting, we have a couple probes with 0 counts in all 16 ROIs so we will remove them here.
+
+aggreprobe is a GeoDiff specific function for probe aggregation and filtering. Probes get filtered 
+based on either correlation and/or the score test within targets and then aggregated. The negative 
+probes do not get aggregated or filtered.
+
+```{r}
+all0probeidx <- which(rowSums(exprs(kidney))==0)
+if (length(all0probeidx) > 0) {
+    kidney <- kidney[-all0probeidx, ]
+}
+kidney <- aggreprobe(kidney, use = "cor")
+```
+
+
+## Target QC
+
+### Score test
+
+Using the background score test, we can determine which targets are expressed above the background 
+of the negative probes across this dataset. We can then filter the data to only targets above 
+background, using a suggested pvalue threshold of 1e-3.
+
+```{r}
+kidney <- BGScoreTest(kidney)
+
+sum(fData(kidney)[["pvalues"]] < 1e-3, na.rm = TRUE)
+```
+
+For advanced users, there are 3 variables that can be changed in the score test. The default for all
+three variables is FALSE. Any combination of these variables can be used.
+
+  1. split         - should the poisson background values split by group be used
+  2. removeoutlier - should outlier negatives be removed
+  3. useprior      - use prior that the expression level of background follows a Beta distribution,
+                         this will lead to a more conservative test but is prone to influence by
+                         outliers
+
+```{r}
+kidneySplit <- BGScoreTest(kidney, split = TRUE, removeoutlier = FALSE, useprior = FALSE)
+sum(fData(kidneySplit)[["pvalues"]] < 1e-3, na.rm = TRUE)
+
+kidneyOutliers <- BGScoreTest(kidney, split = FALSE, removeoutlier = TRUE, useprior = FALSE)
+sum(fData(kidneyOutliers)[["pvalues"]] < 1e-3, na.rm = TRUE)
+
+kidneyPrior <- BGScoreTest(kidney, split = FALSE, removeoutlier = FALSE, useprior = TRUE)
+sum(fData(kidneyPrior)[["pvalues"]] < 1e-3, na.rm = TRUE)
+```
+
+### Estimate the size factor
+
+To estimate the signal size factor, we use the fit negative binomial threshold function. This size
+factor represents technical variation between ROIs like sequencing depth
+
+The feature_high_fitNBth labeled genes are ones well above background that will be used in later steps.
+
+```{r}
+set.seed(123)
+
+kidney <- fitNBth(kidney)
+
+features_high <- rownames(fData(kidney))[fData(kidney)$feature_high_fitNBth == 1]
+
+length(features_high)
+```
+
+We can compare this threshold to the mean of the background as a sanity check.
+
+```{r}
+bgMean <- mean(fData(kidney)$featfact, na.rm = TRUE)
+
+notes(kidney)[["threshold"]]
+bgMean
+```
+
+This is a sanity check to see that the signal size factor and background size factor are correlated but not redundant.
+
+
+```{r}
+cor(kidney$sizefact, kidney$sizefact_fitNBth)
+plot(kidney$sizefact, kidney$sizefact_fitNBth, xlab = "Background Size Factor",
+     ylab = "Signal Size Factor")
+abline(a = 0, b = 1)
+```
+
+In this dataset, this size factor correlate well with different quantiles, including $75\%$ quantile which is used in Q3 normalization.
+
+```{r}
+# get only biological probes
+posdat <- kidney[-which(fData(kidney)$CodeClass == "Negative"), ]
+posdat <- exprs(posdat)
+
+quan <- sapply(c(0.75, 0.8, 0.9, 0.95), function(y)
+  apply(posdat, 2, function(x) quantile(x, probs = y)))
+
+corrs <- apply(quan, 2, function(x) cor(x, kidney$sizefact_fitNBth))
+names(corrs) <- c(0.75, 0.8, 0.9, 0.95)
+
+corrs
+
+quan75 <- apply(posdat, 2, function(x) quantile(x, probs = 0.75))
+```
+
+Quantile range (quantile - background size factor scaled by the mean feature factor of negative probes) has better correlation with the signal size factor.
+
+```{r}
+kidney <- QuanRange(kidney, split = FALSE, probs = c(0.75, 0.8, 0.9, 0.95))
+
+corrs <- apply(pData(kidney)[, as.character(c(0.75, 0.8, 0.9, 0.95))], 2, function(x)
+  cor(x, kidney$sizefact_fitNBth))
+
+names(corrs) <- c(0.75, 0.8, 0.9, 0.95)
+
+corrs
+```
+
+
+## Sample QC
+
+To filter out poor quality ROIs, we only keep those which have a high enough signal in comparison to 
+the background. In this dataset, all ROIs remain.
+
+```{r}
+ROIs_high <- sampleNames(kidney)[which((quantile(fData(kidney)[["para"]][, 1],
+                                                  probs = 0.90, na.rm = TRUE) -
+                                          notes(kidney)[["threshold"]])*kidney$sizefact_fitNBth>2)]
+
+features_all <- rownames(posdat)
+```
+
+
+## DE modeling
+
+### Fixed Effect Model
+
+Running the DE model with default values.
+
+```{r}
+
+NBthDEmod <- fitNBthDE(form = ~region,
+                       split = FALSE,
+                       object = kidney)
+
+str(NBthDEmod)
+```
+
+
+### Mixed effect model
+
+First take a look at the study design. It shows the two levels of region both exist in the same
+patient ID. This indicates the random effect model with random slope would be appropriate, still we
+fit both random intercept model and random slope model to showcase the capability of the mixed model
+function. 
+
+Here we subset features_high to speed up DE in later steps as only these 30 genes are modeled.
+
+```{r}
+pData(kidney)$region <- factor(pData(kidney)$region, levels=c("glomerulus", "tubule"))
+
+table(pData(kidney)[, c("region", "slide name")])
+
+features_high_subset <- features_high[1:30]
+```
+
+
+Random intercept model only for high genes as an example, takes about 1 hour on the full dataset.
+
+```{r, message=FALSE}
+set.seed(123)
+NBthmDEmod <- fitNBthmDE(object = kidney,
+                         form = ~ region+(1|`slide name`),
+                         ROIs_high = ROIs_high,
+                         split = FALSE,
+                         features_all = features_high_subset,
+                         preci1=NBthDEmod$preci1,
+                         threshold_mean = bgMean,
+                         sizescale = TRUE,
+                         controlRandom=list(nu=12, nmh_e=400, thin_e=60))
+
+str(NBthmDEmod)
+```
+
+Random slope model (recommended for this study design), takes about 4 hours on the full dataset.
+
+```{r, message=FALSE}
+set.seed(123)
+NBthmDEmodslope <- fitNBthmDE(object = kidney,
+                              form = ~ region+(1+region|`slide name`),
+                              ROIs_high = ROIs_high,
+                              split = FALSE,
+                              features_all = features_high_subset,
+                              preci1=NBthDEmod$preci1,
+                              threshold_mean = bgMean,
+                              sizescale = TRUE,
+                              controlRandom=list(nu=12, nmh_e=400, thin_e=60))
+```
+
+
+Relation between models.
+
+```{r, fig.height=4, fig.width=4}
+plot(NBthDEmod$para[2,names(NBthmDEmod$para[2,])], NBthmDEmod$para[2,],
+     xlab = "Fixed Effect Model Output Parameters", ylab = "Mixed Effect Model Output Parameters")
+abline(a=0,b=1)
+
+plot(NBthDEmod$para[2,names(NBthmDEmodslope$para[2,])], NBthmDEmodslope$para[2,],
+     xlab = "Fixed Effect Model Output Parameters", ylab = "Random Slope Model Output Parameters")
+abline(a=0,b=1)
+
+```
+
+Genes with larger difference in estimates between fixed effect model and random slope model have
+larger random effect variance for the random slope.
+
+```{r}
+diff_high <- names(which(abs(NBthDEmod$para[2,names(NBthmDEmodslope$para[2,])]-
+                               NBthmDEmodslope$para[2,])>0.6))
+diff_high
+set.seed(123)
+
+NBthmDEmodslope$theta[3, "ACADM"]
+
+
+annot <- pData(kidney)
+annot$ACADM <- posdat["ACADM",]
+```
+
+
+The figure below shows there are huge variation in the difference between two levels of region
+within each slide.
+
+```{r, fig.height=4, fig.width=4}
+
+plot_dat <- annot[,c("region", "ACADM", "slide name")]
+
+p <- ggplot(plot_dat, aes(x=`slide name`, y=ACADM, fill=region)) +
+  geom_boxplot()
+
+plot(p)
+
+```
+
+### Generate DE result
+
+A list of inference results can be generated using coefNBth. This produces a list of Wald test
+inference results on model coefficients.
+
+```{r}
+coeff <- coefNBth(NBthDEmod)
+coefr <- coefNBth(NBthmDEmod)
+coefrslope <- coefNBth(NBthmDEmodslope)
+
+str(coeff)
+```
+
+If you see an NA it is an extremely insignificant gene, these p-values can be changed to 1.
+
+
+We can find the baselevel of this DE comparison by looking at the comparison name after coefNBth.
+The base level is not listed here as it is what everything else is compared to. So in this case the
+base level is regionglomerulus.
+
+```{r}
+rownames(coeff$estimate)[-1]
+```
+
+DE tables can be generated using DENBth. This will produce a table using the inference list generated
+by coefNBth. Negative fold changes indicate higher expression in the base condition.
+
+```{r}
+DEtab <- DENBth(coeff, variable = "regiontubule")
+DEtabr <- DENBth(coefr, variable = "regiontubule")
+DEtabrslope <- DENBth(coefrslope, variable = "regiontubule")
+
+head(DEtab)
+```
+
+For datasets with multiple comparisons, contrastNBth() can be used to create all pair-wise
+comparisons. That output can also be run through DENBth to create a DE table.
+
+## Normalization
+
+Here we normalize the data using a Poisson threshold model based normalization-log2 transformation.
+In this first normalization, we will not split by slide.
+
+```{r}
+set.seed(123)
+
+names(assayData(kidney))
+
+kidney <- fitPoisthNorm(object = kidney,
+                        ROIs_high = ROIs_high,
+                        threshold_mean = bgMean,
+                        sizescalebythreshold = TRUE)
+
+names(assayData(kidney))
+
+head(fData(kidney)[,(ncol(fData(kidney))-6):ncol(fData(kidney))])
+
+head(pData(kidney))
+```
+
+After normalization, 2 matrices are added to the assayData:
+
+  normmat0 - normalization after iteration 1
+
+  normmat - normalization after iteration 2
+
+
+Convergence and parameter values are added to pData and fData.
+
+<br>
+
+In this normalize, we split by slide.
+
+```{r}
+set.seed(123)
+
+kidney <- fitPoisthNorm(object = kidney,
+                        split = TRUE,
+                        ROIs_high = ROIs_high,
+                        threshold_mean = bgMean,
+                        sizescalebythreshold = TRUE)
+
+names(assayData(kidney))
+
+```
+
+After normalization, 2 matrices are added to the assayData labeled with -sp for split:
+
+  normmat0-sp - normalization after iteration 1
+
+  normmat-sp  - normalization after iteration 2
+
+<br>
+
+### Comparison of normalization methods
+
+Compared to quantile 75 (Q3) normalization
+
+```{r}
+norm_dat_backqu75 <- sweep(posdat[, ROIs_high], 2,
+                           (kidney[, ROIs_high]$sizefact * bgMean),
+                           FUN = "-") %>%
+  sweep(., 2, quan75[ROIs_high], FUN = "/") %>%
+  pmax(., 0) %>%
+  `+`(., 0.01) %>%
+  log2()
+```
+
+
+```{r, fig.height=4, fig.width=4}
+dat_plot <- cbind(pData(kidney)[ROIs_high, c("slide name", "region")],
+                  t(norm_dat_backqu75[features_all, ]))
+
+dat_plot <- cbind(dat_plot, ROI_ID = ROIs_high)
+
+dat_plot <- melt(dat_plot, id.vars = c("ROI_ID", "slide name", "region"))
+
+ggplot(dat_plot, aes(x = value)) +
+  geom_density(aes(fill = region, group = ROI_ID, alpha = 0.01)) +
+  facet_grid(~`slide name`) +
+  ggtitle("Q3 Normalization")+
+  labs(x = "Q3 Normalized Value (log2)")
+```
+
+Here you can see that Q3 normalization is prone to low values.
+
+```{r, fig.height=4, fig.width=4}
+annot <- pData(kidney)
+
+dat_plot <- cbind(annot[ROIs_high, c("slide name", "region")],
+                  t(assayDataElement(kidney[features_high, ROIs_high], "normmat_sp")))
+
+dat_plot <- cbind(dat_plot, ROI_ID = ROIs_high)
+
+dat_plot <- melt(dat_plot, id.vars = c("ROI_ID", "slide name", "region"))
+
+ggplot(dat_plot, aes(x = value)) +
+  geom_density(aes(fill = region, group = ROI_ID, alpha = 0.01)) +
+  facet_wrap(~`slide name`) +
+  ggtitle("Poisson threshold normalization")+
+  labs(x = "Poisson Threshold Normalized Value (log2)")
+```
+
+In contrast, you can see that the poisson threshold normalized values follow more of a normal curve,
+eliminating the spikes in low values.
+
+
+#### Clustering
+
+```{r, fig.height=4, fig.width=4}
+dat <- t(norm_dat_backqu75[features_high, ])
+dat_pca <- prcomp(dat, center = TRUE, scale. = TRUE)
+dat <- as.data.frame(dat)
+
+dat$PC1 <- dat_pca$x[, 1]
+dat$PC2 <- dat_pca$x[, 2]
+dat$id <- annot$`slide name`[match(ROIs_high, colnames(posdat))]
+dat$class <- annot$class[match(ROIs_high, colnames(posdat))]
+dat$region <- annot$region[match(ROIs_high, colnames(posdat))]
+dat$sizeratio <- kidney[, ROIs_high]$sizefact_fitNBth / kidney[, ROIs_high]$sizefact
+
+p <- ggplot(data = dat, aes(x = PC1, y = PC2)) +
+  geom_point(aes(colour = paste(class, region))) +
+  theme_bw()+
+  labs(title = "Q3 Normalized Data")
+
+plot(p)
+
+p <- ggplot(data = dat, aes(x = PC1, y = PC2)) +
+  geom_point(aes(colour = log2(sizeratio))) +
+  theme_bw()+
+  scale_color_gradient2(high = "gold", mid = "grey50", low = "darkblue", midpoint = 0.2)+
+  labs(title = "Q3 Normalized Data")
+
+plot(p)
+```
+
+As you can see in the first PCA plot, the ROIs cluster by region and class.  However, the first PC
+is mostly driven by the ratio of background to signal size ratio as shown in the second PCA plot.
+
+
+With the Poisson Threshold normalization, the ROIs still cluster by region and class but the first
+PC is not strictly driven by the background to signal size ratio.
+
+```{r, fig.height=4, fig.width=4}
+dat <- t(assayDataElement(kidney[features_high, ROIs_high],"normmat_sp"))
+dat_pca <- prcomp(dat, center = TRUE, scale. = TRUE)
+dat <- as.data.frame(dat)
+
+dat$PC1 <- dat_pca$x[, 1]
+dat$PC2 <- dat_pca$x[, 2]
+dat$id <- annot$`slide name`[match(ROIs_high, colnames(posdat))]
+dat$class <- annot$class[match(ROIs_high, colnames(posdat))]
+dat$region <- annot$region[match(ROIs_high, colnames(posdat))]
+dat$sizeratio <- kidney[, ROIs_high]$sizefact_fitNBt / kidney[, ROIs_high]$sizefact
+
+p <- ggplot(data = dat, aes(x = PC1, y = PC2)) +
+  geom_point(aes(colour = paste(class, region))) +
+  theme_bw()+
+  labs(title = "Poisson Threshold Normalized Data")
+
+plot(p)
+
+p <- ggplot(data = dat, aes(x = PC1, y = PC2)) +
+  geom_point(aes(colour = log2(sizeratio))) +
+  theme_bw()+
+  scale_color_gradient2(high = "gold", mid = "grey50", low = "darkblue", midpoint = 0.2)+
+  labs(title = "Poisson Threshold Normalized Data")
+
+plot(p)
+```
+
+
+```{r}
+sessionInfo()
+```
+

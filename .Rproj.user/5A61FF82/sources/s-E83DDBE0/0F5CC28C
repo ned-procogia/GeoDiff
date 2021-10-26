@@ -1,0 +1,26 @@
+{
+    "id": "0F5CC28C",
+    "path": "~/r-notebooks/nanostring_cpp_opti/just_rcpp/src/NBthmDEMH.cpp",
+    "project_path": "src/NBthmDEMH.cpp",
+    "type": "cpp",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1635267454079.0,
+    "source_on_save": false,
+    "relative_order": 6,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "137,0",
+        "scrollLine": "108"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1634598790,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1634598790,
+    "read_only": false,
+    "read_only_alternatives": []
+}
