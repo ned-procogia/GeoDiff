@@ -183,7 +183,7 @@ setMethod(
 
 
 setMethod(
-  "BGScoreTest", "matrix",
+  "BGScoreTest", "dgCMatrix",
   function(object, BGmod, adj = 1, probenum, removeoutlier = FALSE, useprior = FALSE) {
     if (removeoutlier == TRUE) {
       boxobj <- graphics::boxplot(BGmod$featfact, plot = FALSE)
@@ -222,10 +222,15 @@ setMethod(
         deno <- (sizefact * sigma * featfact0 + 1) * featfact0
         ### focus here!!! - issue with losing names attached to data... 
         #scores <- apply(object, 1, function(x) sum((x - sizefact * featfact0) / deno) / sqrt(sum(sizefact / deno)))
-        new_object = ((object - sizefact * featfact0)/(sqrt(sum(sizefact / deno))*deno))
-        scores_ned = rowsums(new_object)
+        new_object_numerator = ((object - sizefact * featfact0))
+        new_object_denominator = 1/(sqrt(sum(sizefact / deno))*deno)
+        new_object_denominator = as(new_object_denominator, "sparseMatrix") 
+        quotient = new_object_numerator%*%new_object_denominator
+        scores_ned = rowSums(quotient)
         names(scores_ned) = rownames(object)
         scores = scores_ned
+        #print(scores[[993]])
+        #print(scores_ned[[993]])
         
       } else {
         if (is.null(names(probenum))) names(probenum) <- rownames(object)

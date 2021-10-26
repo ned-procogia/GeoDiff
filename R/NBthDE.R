@@ -327,7 +327,7 @@ setMethod(
 #' @rdname fitNBthDE-methods
 #' @aliases fitNBthDE,matrix-method
 setMethod(
-    "fitNBthDE", "matrix",
+    "fitNBthDE", "dgCMatrix",
     function(form, annot, object, probenum,
     features_high, features_all, sizefact_start, sizefact_BG,
     threshold_mean, preci2=10000, lower_threshold = 0.01,
@@ -371,12 +371,12 @@ setMethod(
         } else {
             startpara <- c(rep(0, ncol(X)), 1, threshold_mean)
         }
-
-
+        #might lead to memory blowing up... need to figure out t(sparse_mat[subset,])
+        object_mat = as.matrix(object)
         for (iter in seq_len(iterations)) {
             if (iter == 1) {
                 result <- NBthDE_paraOptall(
-                    t(object[features_high, ]), X, sizefact_BG, sizefact,
+                    t(object_mat[features_high, ]), X, sizefact_BG, sizefact,
                     preci1, threshold_mean * probenum[features_high], preci2,
                     startpara, sizescalebythreshold, (iter == iterations)
                 )
@@ -391,7 +391,7 @@ setMethod(
                 conv0 <- conv
             } else {
                 result <- NBthDE_paraOptall(
-                    t(object[features_all, ]), X, sizefact_BG, sizefact,
+                    t(object_mat[features_all, ]), X, sizefact_BG, sizefact,
                     preci1, threshold_mean * probenum[features_all], preci2,
                     startpara, sizescalebythreshold, (iter == iterations)
                 )
