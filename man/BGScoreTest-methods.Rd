@@ -4,6 +4,7 @@
 \name{BGScoreTest}
 \alias{BGScoreTest}
 \alias{BGScoreTest,NanoStringGeoMxSet-method}
+\alias{BGScoreTest_function}
 \alias{BGScoreTest,matrix-method}
 \title{Testing for features above the background}
 \usage{
@@ -17,7 +18,7 @@ BGScoreTest(object, ...)
   useprior = FALSE
 )
 
-\S4method{BGScoreTest}{matrix}(
+BGScoreTest_function(
   object,
   BGmod,
   adj = 1,

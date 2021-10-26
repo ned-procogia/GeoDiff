@@ -4,6 +4,7 @@
 \name{fitNBthDE}
 \alias{fitNBthDE}
 \alias{fitNBthDE,NanoStringGeoMxSet-method}
+\alias{fitNBthDE_funct}
 \alias{fitNBthDE,matrix-method}
 \title{Negative Binomial threshold model for differential expression analysis}
 \usage{
@@ -32,7 +33,7 @@ fitNBthDE(object, ...)
   confac = 1
 )
 
-\S4method{fitNBthDE}{matrix}(
+fitNBthDE_funct(
   form,
   annot,
   object,
@@ -190,6 +191,8 @@ NBthDEmod1 <- fitNBthDE(
     preci1con = 1/25,
     sizescalebythreshold = TRUE
 )
+
+
 
 
 }
