@@ -504,7 +504,7 @@ setMethod(
     
     tmp_mat = (countmat - countmat_expected)^2 / countmat_expected
     tmp_mat[is.na(tmp_mat)] <- 0
-    ned_mean = sum(colSums(tmp_mat))/length(unname(countmat))
+    disper = sum(colsums(tmp_mat))/length(unname(countmat))
     #disper <- mean((countmat - countmat_expected)^2 / countmat_expected, na.rm = TRUE)
     
     
