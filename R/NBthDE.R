@@ -425,6 +425,24 @@ fitNBthDE_funct =     function(form, annot, object, probenum,
         
         contrvec <- t(rep(1 / n_sample, n_sample)) %*% X
         contrmat <- rbind(contrvec, cbind(rep(0, (n_para - 1)), diag(1, (n_para - 1))))
+
+        if ((NROW(cov_mat0)==1 & NCOL(cov_mat0)==1) & cov_mat0[1,1]==0){
+          print("not looking good, Charlie Farlie")
+          return(list(
+            X = "NA",
+            para0 = "NA",
+            para = "NA",
+            sizefact = "NA",
+            sizefact0 = "NA",
+            preci1 = "NA",
+            Im0 = "NA",
+            Im = "NA",
+            conv0 = "NA",
+            conv = "NA",
+            features_high = "NA",
+            features_all = "NA"
+          ))
+        }
         preci_list <- list(`0` = diag(confac * preci1con, nrow = 1), preci_mat = solve(cov_mat0))
         preci10 <- Matrix::bdiag(preci_list)
         preci1 <- as.matrix(t(contrmat) %*% preci10 %*% contrmat)
@@ -490,7 +508,7 @@ fitNBthDE_funct =     function(form, annot, object, probenum,
 }
 
 setMethod(
-    "fitNBthDE", "dgCMatrix", fitNBthDE_funct
+  "fitNBthDE", "dgCMatrix", fitNBthDE_funct
 )
 setMethod(
   "fitNBthDE", "matrix", fitNBthDE_funct

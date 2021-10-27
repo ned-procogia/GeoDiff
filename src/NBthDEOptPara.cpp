@@ -13,6 +13,17 @@ using namespace roptim;
 // run after the compilation.
 //
 
+// [[Rcpp::export]]
+arma::vec dnbinom_mu_vec(arma::vec x, double sz, arma::vec mu, int lg){
+  int N = x.n_elem;
+  arma::vec prob(N);
+  //Rcpp::dnbinom_mu(x, sz, mu, lg)
+  for(int i=0; i<N; i++)
+    prob(i) = R::dnbinom_mu(x(i), sz, mu(i), lg);
+  
+  return(prob);
+}
+
 
 class NBthDE_paranll : public Functor {
 public:
@@ -198,6 +209,9 @@ List NBthDE_paraOptall(arma::mat& Y,
         conv(i) = result["conv"];
       }
       catch (...){
+        //par.col(i) = (as<arma::vec>("NA"));
+        //hes[i] = ;// matrix with each element = "NA";
+        //conv(i) = ;// matrix with each element = "NA";
         failcount++;
         //Rcout << i << "failed ";
       }
@@ -215,6 +229,9 @@ List NBthDE_paraOptall(arma::mat& Y,
         conv(i) = result["conv"];
       }
         catch (...){
+          //par.col(i) = (as<arma::vec>("NA"));
+          //hes[i] = ;// matrix with each element = "NA";
+          //conv(i) = ;// matrix with each element = "NA";
           failcount++;
           Rcout << i << "failed ";
       }

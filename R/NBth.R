@@ -70,7 +70,7 @@
 #'                     lower_threshold = 100,
 #'                     tol = 1e-8)
 #'
-
+library(GeoDiff)
 setGeneric("fitNBth",
     signature = c("object"),
     function(object, ...) standardGeneric("fitNBth")
@@ -281,7 +281,7 @@ setMethod(
         # mat <- matrix(1, nrow(object), 1)
         if (is.null(names(probenum))) names(probenum) <- rownames(object)
         for (iter in seq_len(iterations)) {
-            para <- NBth_paraopt(object[features_high, ], probenum[features_high], sizefact, sizefact_BG, threshold, start = start_para)
+            para <- GeoDiff:::NBth_paraopt(object[features_high, ], probenum[features_high], sizefact, sizefact_BG, threshold, start = start_para)
             # result <- mleprobeNBall(object[,features_high], mat, sizefact0, sizefact,
             #                         matrix(0,1,1), threshold, 0,
             #                         c(rep(0,ncol(mat)), 1, threshold), 0)
@@ -290,7 +290,9 @@ setMethod(
 
 
             for (i in seq_len(length(sizefact))) {
-                fun <- NBth_scalenll(object[features_remain, i], probenum[features_remain], t(para[1, features_remain]), t(para[2, features_remain]), sizefact_BG[i], threshold)
+                fun <- GeoDiff:::NBth_scalenll(object[features_remain, i], probenum[features_remain], t(para[1, features_remain]), t(para[2, features_remain]), sizefact_BG[i], threshold)
+                sizefact_start[i][is.na(sizefact_start[i])] <- 0
+                print(max(sizefact_start[i]))
                 sizefact[i] <- optim(c(sizefact_start[i]), fun, lower = c(lower_sizefact), method = "L-BFGS-B")$par
             }
 
@@ -304,8 +306,8 @@ setMethod(
 
 
             if (!threshold_fix) {
-                fun1 <- NBth_thnll(object[features_remain, ], probenum[features_remain], sizefact, sizefact_BG, scale_fac * t(para[1, features_remain]), t(para[2, features_remain]))
-
+                fun1 <- GeoDiff:::NBth_thnll(object[features_remain, ], probenum[features_remain], sizefact, sizefact_BG, scale_fac * t(para[1, features_remain]), t(para[2, features_remain]))
+                threshold_start[is.na(threshold_start)] <- 0
                 threshold <- optim(c(threshold_start), fun1, lower = c(lower_threshold), method = "L-BFGS-B")$par
             }
 
@@ -313,7 +315,8 @@ setMethod(
 
 
             message(sprintf("Iteration = %s, squared error = %s", iter, sum((sizefact - sizefact0)^2)))
-
+            print(sum((sizefact - sizefact0)^2))
+            sizefact0[is.na(sizefact0)] <- 0
             if (sum((sizefact - sizefact0)^2) < tol) break
 
             sizefact0 <- sizefact
