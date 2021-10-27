@@ -13,7 +13,7 @@ Imports:
     robust,
     plyr,
     lme4,
-    Rcpp (>= 1.0.4.6), 
+    Rcpp,
     withr,
     methods,
     graphics,
