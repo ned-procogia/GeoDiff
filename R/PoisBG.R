@@ -15,6 +15,9 @@
 #' @importFrom Biobase sampleNames
 #' @importFrom Biobase featureNames
 #'
+#' @importFrom Rfast rowsums
+#' @importFrom Rfast colsums
+#'
 #' @return a valid GeoMx S4 object if split is FALSE
 #' \itemize{
 #'   \item sizefact - estimated size factor in phenoData
@@ -37,7 +40,6 @@
 #' @export
 #' @docType methods
 #' @rdname fitPoisBG-methods
-
 setGeneric("fitPoisBG",
            signature = c("object"),
            function(object, ...) standardGeneric("fitPoisBG")
@@ -130,16 +132,35 @@ setMethod(
 #'
 #' @rdname fitPoisBG-methods
 #' @aliases fitPoisBG,matrix-method
-setMethod(
-  "fitPoisBG", "dgCMatrix",
-  function(object, iterations = 10, tol = 1e-3, size_scale = c("sum", "first")) {
-    size_scale <- match.arg(size_scale)
-    n_feature <- NROW(object)
-    n_sample <- NCOL(object)
-    ind_na <- which(is.na(object), arr.ind = TRUE)
-    featfact0 <- numeric(n_feature)
-    sizefact <- colMeans(object)
+#' 
+#' 
+fitPoisBG_function = function(object, iterations = 10, tol = 1e-3, size_scale = c("sum", "first")) {
+  size_scale <- match.arg(size_scale)
+  n_feature <- NROW(object)
+  n_sample <- NCOL(object)
+  ind_na <- which(is.na(object), arr.ind = TRUE)
+  featfact0 <- numeric(n_feature)
+  sizefact <- colMeans(object)
+  
+  if (size_scale == "first") {
+    scale_fac <- sizefact[1]
+  } else if (size_scale == "sum") {
+    scale_fac <- sum(sizefact)
+  }
+  
+  sizefact <- sizefact / scale_fac
+  sizefact0 <- sizefact
+  sizefact_mat <- matrix(rep(sizefact, n_feature), n_feature, n_sample, byrow = TRUE)
+  sizefact_mat[ind_na] <- NA
+  object_rowsum = rowSums(object)
+  object_colsum = colSums(object)
+  for (iter in seq_len(iterations)) {
+    featfact <- object_rowsum / Rfast::rowsums(sizefact_mat)
+    featfact_mat <- matrix(rep(featfact, n_sample), n_feature, n_sample)
+    featfact_mat[ind_na] <- NA
     
+    sizefact <- object_colsum / Rfast::colsums(featfact_mat)
+    names(sizefact) = colnames(object)
     if (size_scale == "first") {
       scale_fac <- sizefact[1]
     } else if (size_scale == "sum") {
@@ -147,49 +168,35 @@ setMethod(
     }
     
     sizefact <- sizefact / scale_fac
-    sizefact0 <- sizefact
+    
     sizefact_mat <- matrix(rep(sizefact, n_feature), n_feature, n_sample, byrow = TRUE)
     sizefact_mat[ind_na] <- NA
-    object_rowsum = rowSums(object)
-    object_colsum = colSums(object)
-    for (iter in seq_len(iterations)) {
-      featfact <- object_rowsum / rowsums(sizefact_mat)
-      featfact_mat <- matrix(rep(featfact, n_sample), n_feature, n_sample)
-      featfact_mat[ind_na] <- NA
-      
-      sizefact <- object_colsum / colsums(featfact_mat)
-      names(sizefact) = colnames(object)
-      if (size_scale == "first") {
-        scale_fac <- sizefact[1]
-      } else if (size_scale == "sum") {
-        scale_fac <- sum(sizefact)
-      }
-      
-      sizefact <- sizefact / scale_fac
-      
-      sizefact_mat <- matrix(rep(sizefact, n_feature), n_feature, n_sample, byrow = TRUE)
-      sizefact_mat[ind_na] <- NA
-      
-      message(sprintf(
-        "Iteration = %s, squared error = %e",
-        iter,
-        sum((sizefact - sizefact0)^2) + sum((featfact - featfact0)^2)
-      ))
-      if (sum((sizefact - sizefact0)^2) + sum((featfact - featfact0)^2) < tol) {
-        break
-      }
-      
-      sizefact0 <- sizefact
-      featfact0 <- featfact
-    }
-    message("Model converged.")
     
-    return(list(
-      sizefact = sizefact,
-      featfact = featfact,
-      countmat = object
+    message(sprintf(
+      "Iteration = %s, squared error = %e",
+      iter,
+      sum((sizefact - sizefact0)^2) + sum((featfact - featfact0)^2)
     ))
+    if (sum((sizefact - sizefact0)^2) + sum((featfact - featfact0)^2) < tol) {
+      break
+    }
+    
+    sizefact0 <- sizefact
+    featfact0 <- featfact
   }
+  message("Model converged.")
+  
+  return(list(
+    sizefact = sizefact,
+    featfact = featfact,
+    countmat = object
+  ))
+}
+setMethod(
+  "fitPoisBG", "dgCMatrix",fitPoisBG_function
+)
+setMethod(
+  "fitPoisBG", "matrix",fitPoisBG_function
 )
 
 
@@ -234,7 +241,7 @@ setMethod(
     n_sample <- NCOL(object)
     ind_na <- which(is.na(object), arr.ind = TRUE)
     
-    sizefact <- colmeans(object, 2)
+    sizefact <- Rfast::colmeans(object, 2)
     
     if (size_scale == "first") {
       scale_fac <- sizefact[1]
@@ -254,15 +261,15 @@ setMethod(
       # apply(object[, x == id, drop = FALSE], 1, sum, na.rm = TRUE) /
       #   apply(sizefact_mat[, x == id, drop = FALSE], 1, sum, na.rm = TRUE)
       featfact <- sapply(uniid, function(x) {
-        rowsums(object[, x == id, drop = FALSE]) /
-          rowsums(sizefact_mat[, x == id, drop = FALSE])
+        Rfast::rowsums(object[, x == id, drop = FALSE]) /
+          Rfast::rowsums(sizefact_mat[, x == id, drop = FALSE])
       })
       
       featfact_mat <- featfact[, id]
       featfact_mat[ind_na] <- NA
       
       #sizefact <- apply(object, 2, sum, na.rm = TRUE) / apply(featfact_mat, 2, sum, na.rm = TRUE)
-      sizefact <- colsums(object) / colsums(featfact_mat)
+      sizefact <- Rfast::colsums(object) / Rfast::colsums(featfact_mat)
       if (size_scale == "first") {
         scale_fac <- sizefact[1]
       } else if (size_scale == "sum") {
@@ -504,7 +511,7 @@ setMethod(
     
     tmp_mat = (countmat - countmat_expected)^2 / countmat_expected
     tmp_mat[is.na(tmp_mat)] <- 0
-    disper = sum(colsums(tmp_mat))/length(unname(countmat))
+    disper = sum(Rfast::colsums(tmp_mat))/length(unname(countmat))
     #disper <- mean((countmat - countmat_expected)^2 / countmat_expected, na.rm = TRUE)
     
     
@@ -692,7 +699,7 @@ setMethod(
         featfact <- BGmod$featfact
       }
       
-      back <- colmeans(featfact[, BGmod$id], na.rm = TRUE) * BGmod$sizefact
+      back <- Rfast::colmeans(featfact[, BGmod$id], na.rm = TRUE) * BGmod$sizefact
     }
     
     
