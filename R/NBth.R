@@ -22,7 +22,7 @@
 #' @importFrom Biobase experimentData
 #' @importFrom Biobase featureNames
 #' @importFrom Biobase annotation
-#'
+#' @importFrom Rcpp sourceCpp
 #'
 #' @return a valid GeoMx S4 object
 #' \itemize{
