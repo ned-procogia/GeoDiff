@@ -29,8 +29,6 @@
 #' @export
 #' @docType methods
 #' @rdname aggreprobe-methods
-#'
-
 setGeneric("aggreprobe",
     signature = c("object"),
     function(object, ...) standardGeneric("aggreprobe")

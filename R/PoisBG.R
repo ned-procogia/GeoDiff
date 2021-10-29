@@ -138,8 +138,16 @@ fitPoisBG_function = function(object, iterations = 10, tol = 1e-3, size_scale = 
   size_scale <- match.arg(size_scale)
   n_feature <- NROW(object)
   n_sample <- NCOL(object)
-  ind_na <- which(is.na(object), arr.ind = TRUE)
+  if (typeof(object)=='matrix'){
+    ind_na <- which(is.na(object), arr.ind = TRUE)
+  }
+  else{
+    ind_na <-NULL
+  }
   featfact0 <- numeric(n_feature)
+  print(NCOL(object))
+  print(NROW(object))
+  print(typeof(object))
   sizefact <- colMeans(object)
   
   if (size_scale == "first") {
@@ -151,13 +159,23 @@ fitPoisBG_function = function(object, iterations = 10, tol = 1e-3, size_scale = 
   sizefact <- sizefact / scale_fac
   sizefact0 <- sizefact
   sizefact_mat <- matrix(rep(sizefact, n_feature), n_feature, n_sample, byrow = TRUE)
-  sizefact_mat[ind_na] <- NA
+  if (is.null(ind_na)){
+    #pass if ind_nd is null
+  }
+  else{
+    sizefact_mat[ind_na] <- NA
+  }
   object_rowsum = rowSums(object)
   object_colsum = colSums(object)
   for (iter in seq_len(iterations)) {
     featfact <- object_rowsum / Rfast::rowsums(sizefact_mat)
     featfact_mat <- matrix(rep(featfact, n_sample), n_feature, n_sample)
-    featfact_mat[ind_na] <- NA
+    if (is.null(ind_na)){
+      #pass if ind_nd is null
+    }
+    else{
+      featfact_mat[ind_na] <- NA
+    }
     
     sizefact <- object_colsum / Rfast::colsums(featfact_mat)
     names(sizefact) = colnames(object)
@@ -170,7 +188,12 @@ fitPoisBG_function = function(object, iterations = 10, tol = 1e-3, size_scale = 
     sizefact <- sizefact / scale_fac
     
     sizefact_mat <- matrix(rep(sizefact, n_feature), n_feature, n_sample, byrow = TRUE)
-    sizefact_mat[ind_na] <- NA
+    if (is.null(ind_na)){
+      #pass if ind_nd is null
+    }
+    else{
+      sizefact_mat[ind_na] <- NA
+    }
     
     message(sprintf(
       "Iteration = %s, squared error = %e",
@@ -269,7 +292,7 @@ setMethod(
       featfact_mat[ind_na] <- NA
       
       #sizefact <- apply(object, 2, sum, na.rm = TRUE) / apply(featfact_mat, 2, sum, na.rm = TRUE)
-      sizefact <- Rfast::colsums(object) / Rfast::colsums(featfact_mat)
+      sizefact <- colsums(object) / Rfast::colsums(featfact_mat)
       if (size_scale == "first") {
         scale_fac <- sizefact[1]
       } else if (size_scale == "sum") {
@@ -347,8 +370,6 @@ setMethod(
 #' @export
 #' @docType methods
 #' @rdname diagPoisBG-methods
-
-
 setGeneric("diagPoisBG",
            signature = c("object"),
            function(object, ...) standardGeneric("diagPoisBG")
@@ -573,7 +594,6 @@ setMethod(
 #' @export
 #' @docType methods
 #' @rdname QuanRange-methods
-
 setGeneric("QuanRange",
            signature = c("object"),
            function(object, ...) standardGeneric("QuanRange")

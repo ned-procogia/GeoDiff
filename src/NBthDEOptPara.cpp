@@ -12,7 +12,6 @@ using namespace roptim;
 // (useful for testing and development). The R code will be automatically
 // run after the compilation.
 //
-
 // [[Rcpp::export]]
 arma::vec dnbinom_mu_vec(arma::vec x, double sz, arma::vec mu, int lg){
   int N = x.n_elem;
@@ -23,7 +22,6 @@ arma::vec dnbinom_mu_vec(arma::vec x, double sz, arma::vec mu, int lg){
   
   return(prob);
 }
-
 
 class NBthDE_paranll : public Functor {
 public:
@@ -50,13 +48,8 @@ public:
 
 
     arma::vec tmp0 = arma::exp2(X*beta);
-    //Rcout <<"tmp0: "<< tmp0 << "\n";
     arma::vec tmp1 = alpha0*threshold+alpha%tmp0;
-    //Rcout <<"tmp1: "<< tmp1 << "\n";
-    //Rcout <<"y: "<< y << "\n";
     arma::vec llk = dnbinom_mu_vec(y, r, tmp1, 1);
-    //Rcout <<"llk: "<< llk << "\n";
- //   Rcout << "mean(llk.row(0))" << arma::mean(llk.row(0)) << "\n";
     //arma::mat pen
     arma::mat pen10 = beta.t()*preci1*beta;
     //Rcout << "pen10(0,0): " << pen10(0,0) << "\n";
@@ -112,15 +105,15 @@ public:
 };
 
 // [[Rcpp::export]]
-List NBthDE_paraOptfeat(arma::mat& X, //define these terms
-               arma::vec y,
-               arma::vec alpha0,
-               arma::vec alpha,
-               arma::mat& preci1,
-               double threshold0,
-               double preci2,
-               arma::vec& x0,
-               bool calhes) {
+List NBthDE_paraOptfeat(arma::mat& X, //t(object_mat[features_high, ])
+               arma::vec y, // also confusingly called X in the layer above // y = model.matrix(~fov, data = annot[high_ROIs, ])
+               arma::vec alpha0, // sizefact_BG
+               arma::vec alpha, // sizefact
+               arma::mat& preci1, // preci1
+               double threshold0, //threshold_mean * probenum[features_high]
+               double preci2, // preci2, conveniently
+               arma::vec& x0, // startpara
+               bool calhes) { // sizescalebythreshold
   NBthDE_paranll f;
   f.X=X;
   f.y=y;
@@ -131,44 +124,43 @@ List NBthDE_paraOptfeat(arma::mat& X, //define these terms
   f.preci2=preci2;
   //Rcout <<"x0: "<< x0 << "\n";
   int n = X.n_cols;
+  arma::vec x = x0;
+  // arma::vec beta = x(arma::span(0,n-1));
+  // double r = x(n);
+  // double threshold = x(n+1);
+  // arma::vec tmp0 = arma::exp2(X*beta);
+  // arma::vec tmp1 = alpha0*threshold+alpha%tmp0;
+  // if (isinf(arma::accu(tmp1))){
+  //   Rcout << "accu(tmp1): " << accu(tmp1) << "\n";
+  // }
   arma::vec lower = arma::ones<arma::vec>(n+2) * (-100);
   lower(n) = 0.01;
   lower(n+1) = 0.01;
   arma::vec upper = arma::ones<arma::vec>(n+2) * 100;
   upper(n) = 1000;
   upper(n+1) = 1000000;
-  try{
-    Roptim<NBthDE_paranll> opt("L-BFGS-B");
-    opt.set_lower(lower);
-    opt.set_upper(upper);
-    //opt.control.maxit = maxit;
-    
-    opt.set_hessian(calhes);
-    
-    // opt.set_hessian(true);
-    opt.control.pgtol=1e-3;
-    arma::vec x = x0;
-    // arma::zeros<arma::vec>(n+2);
-    // x(arma::span(0,n-1))=arma::solve(X, arma::log2(y/alpha + 0.001));
-    // x(n) = 1;
-    // x(n+1)=threshold0;
-    
-    opt.minimize(f, x);
-    
-    // arma::mat hes = opt.hessian();
-    // double hes_det = arma::log_det(hes);
-    // double hes_det1 = arma::log_det(hes(arma::span(1,n-1), arma::span(1,n-1)));
-    
-    return List::create(Named("par") = opt.par(),
-                        Named("conv") = opt.convergence(),
-                        Named("hes") = opt.hessian());
-  }
-  catch (int e){
-    throw 404;
-
-  }
-
-
+  Roptim<NBthDE_paranll> opt("L-BFGS-B");
+  opt.set_lower(lower);
+  opt.set_upper(upper);
+  //opt.control.maxit = maxit;
+  
+  opt.set_hessian(calhes);
+  
+  // opt.set_hessian(true);
+  opt.control.pgtol=1e-3;
+  // arma::zeros<arma::vec>(n+2);
+  // x(arma::span(0,n-1))=arma::solve(X, arma::log2(y/alpha + 0.001));
+  // x(n) = 1;
+  // x(n+1)=threshold0;
+  
+  opt.minimize(f, x);
+  
+  // arma::mat hes = opt.hessian();
+  // double hes_det = arma::log_det(hes);
+  // double hes_det1 = arma::log_det(hes(arma::span(1,n-1), arma::span(1,n-1)));
+  return List::create(Named("par") = opt.par(),
+                      Named("conv") = opt.convergence(),
+                      Named("hes") = opt.hessian());
 
 }
 
@@ -190,13 +182,29 @@ List NBthDE_paraOptall(arma::mat& Y,
 
   int n = X.n_cols;
   int m = Y.n_cols;
+  Rcout << "number of columns: "<< m << " \n";
+  
+  //initialise parameter matrix, hessian list, and conv vector
   arma::mat par(n+2,m);
+  arma::mat fake_par(n+2,m);
   List hes(m);
 
-
   arma::vec conv(m);
-  Rcout << "number of columns: "<< m << " \n";
+  double mynan = std::numeric_limits<double>::quiet_NaN();
+  //set each element of the fake parameter matrix to nan
+  for (int k=0; k<m;k++){
+    for (int j=0; j<n+2; j++){
+      fake_par.col(k)[j]=mynan;
+    }
+  }
+  
   int failcount = 0;
+  // arma::vec fake_parameters(n);
+  // fake_parameters.fill(0);
+  // arma::vec fake_hessian(m);
+  // fake_hessian.fill(0);
+  // arma::vec fake_conv(m);
+  // fake_conv.fill(0);
   if(sizescale){
     for(int i=0; i < m; i++){
       try{
@@ -209,9 +217,9 @@ List NBthDE_paraOptall(arma::mat& Y,
         conv(i) = result["conv"];
       }
       catch (...){
-        //par.col(i) = (as<arma::vec>("NA"));
-        //hes[i] = ;// matrix with each element = "NA";
-        //conv(i) = ;// matrix with each element = "NA";
+        par.col(i) = fake_par.col(i);
+        hes[i] = mynan;
+        conv(i) = mynan;
         failcount++;
         //Rcout << i << "failed ";
       }
@@ -229,9 +237,10 @@ List NBthDE_paraOptall(arma::mat& Y,
         conv(i) = result["conv"];
       }
         catch (...){
-          //par.col(i) = (as<arma::vec>("NA"));
-          //hes[i] = ;// matrix with each element = "NA";
-          //conv(i) = ;// matrix with each element = "NA";
+          ;
+          par.col(i) = fake_par.col(i);
+          hes[i] = mynan;
+          conv(i) = mynan;
           failcount++;
           Rcout << i << "failed ";
       }

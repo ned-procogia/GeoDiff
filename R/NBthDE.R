@@ -607,7 +607,6 @@ setMethod(
 #' data(NBthmDEmod2)
 #' coeff <- contrastNBth(NBthmDEmod2)
 #' @export
-#'
 #' @docType methods
 #' @rdname contrastNBth-methods
 #'
