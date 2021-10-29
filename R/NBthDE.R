@@ -333,6 +333,20 @@ fitNBthDE_funct =     function(form, annot, object, probenum,
                                prior_type = c("contrast", "equal"), sizefactrec = TRUE,
                                size_scale = c("sum", "first"), sizescalebythreshold = FALSE,
                                iterations = 2, covrob = FALSE, preci1con=1/25, cutoff = 10, confac = 1) {
+  fail_return = list(
+    X = "NA",
+    para0 = "NA",
+    para = "NA",
+    sizefact = "NA",
+    sizefact0 = "NA",
+    preci1 = "NA",
+    Im0 = "NA",
+    Im = "NA",
+    conv0 = "NA",
+    conv = "NA",
+    features_high = "NA",
+    features_all = "NA"
+  )
   if (iterations == 1) {
     if (!setequal(features_high, features_all)) {
       warning("features_high and features_all need to be identical when iterations=1,
@@ -401,7 +415,9 @@ fitNBthDE_funct =     function(form, annot, object, probenum,
       Im <- result$hes
       names(Im) <- features_all
     }
-    
+    if (sum(is.na(NBthDEmod2$conv)) == length(NBthDEmod2$conv)){
+      return(fail_return)
+    }
     features_remain <- NA
     if ((iterations > 1) & (iter == 1)) {
       features_remain <- names(which(colMeans(abs(para[2:n_para, , drop = FALSE])) < cutoff))
@@ -420,28 +436,17 @@ fitNBthDE_funct =     function(form, annot, object, probenum,
             cov_mat0 <- robust::covRob(t(para[2:n_para, features_remain]), na.action = na.omit)$cov
           }
         } else {
+          if (identical(features_remain, character(0))){return(fail_return)}
           cov_mat0 <- cov(t(para[2:n_para, features_remain, drop = FALSE]), use = "pairwise.complete.obs")
         }
         
         contrvec <- t(rep(1 / n_sample, n_sample)) %*% X
         contrmat <- rbind(contrvec, cbind(rep(0, (n_para - 1)), diag(1, (n_para - 1))))
-
-        if ((NROW(cov_mat0)==1 & NCOL(cov_mat0)==1) & cov_mat0[1,1]==0){
-          print("not looking good, Charlie Farlie")
-          return(list(
-            X = "NA",
-            para0 = "NA",
-            para = "NA",
-            sizefact = "NA",
-            sizefact0 = "NA",
-            preci1 = "NA",
-            Im0 = "NA",
-            Im = "NA",
-            conv0 = "NA",
-            conv = "NA",
-            features_high = "NA",
-            features_all = "NA"
-          ))
+        if ((NROW(cov_mat0)==1 & NCOL(cov_mat0)==1) & is.na(cov_mat0[1,1])){
+          return(fail_return)
+        }
+        else if ((NROW(cov_mat0)==1 & NCOL(cov_mat0)==1) & cov_mat0[1,1]==0){
+          return(fail_return)
         }
         preci_list <- list(`0` = diag(confac * preci1con, nrow = 1), preci_mat = solve(cov_mat0))
         preci10 <- Matrix::bdiag(preci_list)
