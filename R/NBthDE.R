@@ -415,7 +415,7 @@ fitNBthDE_funct =     function(form, annot, object, probenum,
       Im <- result$hes
       names(Im) <- features_all
     }
-    if (sum(is.na(NBthDEmod2$conv)) == length(NBthDEmod2$conv)){
+    if (sum(is.na(result$conv)) == length(result$conv)){
       return(fail_return)
     }
     features_remain <- NA
