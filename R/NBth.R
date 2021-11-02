@@ -291,7 +291,7 @@ setMethod(
             for (i in seq_len(length(sizefact))) {
                 fun <- NBth_scalenll(object[features_remain, i], probenum[features_remain], t(para[1, features_remain]), t(para[2, features_remain]), sizefact_BG[i], threshold)
                 sizefact_start[i][is.na(sizefact_start[i])] <- 0
-                print(max(sizefact_start[i]))
+                #print(max(sizefact_start[i]))
                 sizefact[i] <- optim(c(sizefact_start[i]), fun, lower = c(lower_sizefact), method = "L-BFGS-B")$par
             }
 

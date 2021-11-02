@@ -720,7 +720,7 @@ setMethod(
         featfact <- BGmod$featfact
       }
       
-      back <- Rfast::colmeans(featfact[, BGmod$id], na.rm = TRUE) * BGmod$sizefact
+      back <- colMeans(featfact[, BGmod$id], na.rm = TRUE) * BGmod$sizefact
     }
     
     
