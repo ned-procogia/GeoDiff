@@ -223,18 +223,12 @@ BGScoreTest_function = function(object, BGmod, adj = 1, probenum, removeoutlier 
       new_object_denominator = 1/(sqrt(sum(sizefact / deno))*deno)
       new_object_denominator = as(new_object_denominator, "sparseMatrix") 
    
-      # print(NROW(new_object_numerator))
-      # print(NCOL(new_object_numerator))
-      # print(NROW(new_object_denominator))
-      # print(NCOL(new_object_denominator))
+
       quotient = new_object_numerator%*%new_object_denominator
-      # print(NROW(quotient))
-      # print(NCOL(quotient))
       scores_ned = quotient[,1]
       names(scores_ned) = rownames(object)
       scores = scores_ned
-      #print(scores[[993]])
-      # print(typeof(scores_ned))
+
       
     } else {
       if (is.null(names(probenum))) names(probenum) <- rownames(object)
@@ -338,7 +332,7 @@ setMethod(
       }
     } else {
       if (missing(probenum)) {
-        featfact0 <- Rfast::colmeans(adj * featfact)#, na.rm = TRUE)
+        featfact0 <- colMeans(adj * featfact)#, na.rm = TRUE)
         sigma <- apply(adj * featfact, 2, var, na.rm = TRUE) / featfact0^2
         deno <- lapply(uniid, function(x) (sizefact[x == id] * sigma[x] * featfact0[x] + 1) * featfact0[x])
         names(deno) <- uniid
@@ -348,7 +342,7 @@ setMethod(
       } else {
         if (is.null(names(probenum))) names(probenum) <- rownames(object)
         scores_sp <- sapply(names(probenum), function(feat) {
-          featfact0 <- Rfast::colmeans(probenum[feat] * featfact)#, na.rm = TRUE)
+          featfact0 <- colMeans(probenum[feat] * featfact, na.rm = TRUE)
           sigma <- apply(probenum[feat] * featfact, 2, var, na.rm = TRUE) / featfact0^2
           deno <- lapply(uniid, function(x) (sizefact[x == id] * sigma[x] * featfact0[x] + 1) * featfact0[x])
           names(deno) <- uniid
