@@ -86,7 +86,6 @@ setMethod(
         tol = tol,
         size_scale = size_scale
       )
-      
       object[["sizefact"]] <- result$sizefact[Biobase::sampleNames(object)]
       Biobase::fData(object)[["featfact"]] <- NA
       Biobase::fData(object)[["featfact"]][match(names(result$featfact), Biobase::featureNames(object), nomatch = 0)] <- result$featfact
@@ -99,7 +98,6 @@ setMethod(
         tol = tol,
         size_scale = size_scale
       )
-      
       # append results to the object
       object[["sizefact_sp"]] <- result$sizefact[Biobase::sampleNames(object)]
       for (index in unique(result$id)) {
@@ -175,7 +173,7 @@ fitPoisBG_function = function(object, iterations = 10, tol = 1e-3, size_scale = 
     }
     
     sizefact <- object_colsum / Rfast::colsums(featfact_mat)
-    names(sizefact) = colnames(object)
+    
     if (size_scale == "first") {
       scale_fac <- sizefact[1]
     } else if (size_scale == "sum") {
@@ -183,7 +181,8 @@ fitPoisBG_function = function(object, iterations = 10, tol = 1e-3, size_scale = 
     }
     
     sizefact <- sizefact / scale_fac
-    
+    names(sizefact) = colnames(object)
+
     sizefact_mat <- matrix(rep(sizefact, n_feature), n_feature, n_sample, byrow = TRUE)
     if (is.null(ind_na)){
       #pass if ind_nd is null
@@ -271,7 +270,7 @@ setMethod(
     
     
     sizefact <- sizefact / scale_fac
-    
+    #names(sizefact) = colnames(object)
     sizefact0 <- sizefact
     sizefact_mat <- matrix(rep(sizefact, n_feature), n_feature, n_sample, byrow = TRUE)
     sizefact_mat[ind_na] <- NA
@@ -281,15 +280,16 @@ setMethod(
       # apply(object[, x == id, drop = FALSE], 1, sum, na.rm = TRUE) /
       #   apply(sizefact_mat[, x == id, drop = FALSE], 1, sum, na.rm = TRUE)
       featfact <- sapply(uniid, function(x) {
-        Rfast::rowsums(object[, x == id, drop = FALSE]) /
-          Rfast::rowsums(sizefact_mat[, x == id, drop = FALSE])
+        apply(object[, x == id, drop = FALSE], 1, sum, na.rm = TRUE) /
+          apply(sizefact_mat[, x == id, drop = FALSE], 1, sum, na.rm = TRUE)
       })
       
       featfact_mat <- featfact[, id]
       featfact_mat[ind_na] <- NA
       
       #sizefact <- apply(object, 2, sum, na.rm = TRUE) / apply(featfact_mat, 2, sum, na.rm = TRUE)
-      sizefact <- colsums(object) / Rfast::colsums(featfact_mat)
+      sizefact <- Rfast::colsums(object) / Rfast::colsums(featfact_mat)
+      names(sizefact) = colnames(object)
       if (size_scale == "first") {
         scale_fac <- sizefact[1]
       } else if (size_scale == "sum") {
@@ -316,7 +316,7 @@ setMethod(
       featfact0 <- featfact
     }
     message("Model converged.")
-    
+    #print(featfact)
     return(list(
       sizefact = sizefact,
       featfact = featfact,
@@ -502,13 +502,9 @@ setMethod(
     }
     
     countmat <- as.matrix(countmat)
-    #conmat = rbind(as.vector(countmat),as.vector(countmat_expected))
-    #unique_pairs = unique(conmat, MARGIN=2)
-    #print(length(unique_pairs))
+
     lowtail_prob1 <- ppois(q = countmat, lambda = countmat_expected)
     lowtail_prob2 <- ppois(q = countmat - 1, lambda = countmat_expected)
-    
-    #print(length(unique()) )   
     lowtail_prob <- (lowtail_prob1 + lowtail_prob2) / 2
     
     uptail_prob <- 1 - lowtail_prob
@@ -522,7 +518,15 @@ setMethod(
     
     if (generate_ppplot) {
       y <- sort(lowtail_prob, na.last = TRUE)
+
+      y = y[!is.na(y)]
+      y = y[!is.infinite(y)]
+
       y_simu <- sort(lowtail_prob_simu, na.last = TRUE)
+
+      y_simu = y_simu[!is.na(y_simu)]
+      y_simu = y_simu[!is.infinite(y_simu)]
+
       plot(y_simu, y, ylim = c(0, 1), xlab = "Empircal CDF from simulated data", ylab = "Empircal CDF", main = "Poisson model")
       graphics::abline(a = 0, b = 1)
     }
