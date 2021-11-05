@@ -511,7 +511,9 @@ setMethod(
     
     # simualte data (do it only once)
     #WHY?
-    countmat_simu <- t(rpois(rep(1, ncol(countmat)), lambda = countmat_expected))
+    countmat_simu <- matrix(rpois(n=NROW(countmat_expected)*NCOL(countmat_expected),
+      lambda = countmat_expected), nrow=NROW(countmat_expected))
+    #countmat_simu <- t(rpois(rep(1, ncol(countmat)), lambda = countmat_expected))
     lowtail_prob1_simu <- ppois(q = countmat_simu, lambda = countmat_expected)
     lowtail_prob2_simu <- ppois(q = countmat_simu - 1, lambda = countmat_expected)
     lowtail_prob_simu <- (lowtail_prob1_simu + lowtail_prob2_simu) / 2
