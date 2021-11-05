@@ -7,6 +7,7 @@
 // [[Rcpp::depends(roptim)]]
 using namespace Rcpp;
 using namespace roptim;
+using namespace std;
 
 // // You can include R code blocks in C++ files processed with sourceCpp
 // // (useful for testing and development). The R code will be automatically
@@ -41,7 +42,7 @@ public:
     
     double r = x(n);
     //Rcout<< "r:" << r << ";   \n";
-    if(isnan(r)){
+    if(std::isnan(r)){
       throw 20;
     }
     double threshold = x(n+1);
@@ -56,7 +57,7 @@ public:
     //Rcout << "sum(llk): " << sum(llk) << "\n";
     double pen1 = pen10(0,0)/2.0;
     //+nmh*(1.0/2.0)*pow((threshold-threshold0),2)*preci2
-    if (isinf(sum(llk))){
+    if (std::isinf(sum(llk))){
       throw 20;
     }
     return(-arma::sum(llk)+pen1+(1.0/2.0)*pow((threshold-threshold0),2)*preci2);
