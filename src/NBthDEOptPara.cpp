@@ -5,6 +5,7 @@
 
 #include <roptim.h>
 // [[Rcpp::depends(roptim)]]
+using namespace std;
 using namespace Rcpp;
 using namespace roptim;
 using namespace std;
@@ -49,6 +50,7 @@ public:
 
 
     arma::vec tmp0 = arma::exp2(X*beta);
+    // armadillo vectors: % element-wise multiplication of two objects
     arma::vec tmp1 = alpha0*threshold+alpha%tmp0;
     arma::vec llk = dnbinom_mu_vec(y, r, tmp1, 1);
     //arma::mat pen
@@ -183,7 +185,7 @@ List NBthDE_paraOptall(arma::mat& Y,
 
   int n = X.n_cols;
   int m = Y.n_cols;
-  Rcout << "number of columns: "<< m << " \n";
+  Rcout << "number of rows: "<< m << " \n";
   
   //initialise parameter matrix, hessian list, and conv vector
   arma::mat par(n+2,m);
@@ -243,11 +245,11 @@ List NBthDE_paraOptall(arma::mat& Y,
           hes[i] = mynan;
           conv(i) = mynan;
           failcount++;
-          Rcout << i << "failed ";
+          //Rcout << i << "failed ";
       }
     }
   }
-  Rcout << "failed columns: " << failcount << "\n";
+  Rcout << "failed rows: " << failcount << "\n";
   return List::create(Named("par") = par,
                       Named("conv") = conv,
                       Named("hes") = hes);

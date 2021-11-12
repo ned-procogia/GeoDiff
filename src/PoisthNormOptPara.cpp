@@ -112,14 +112,32 @@ public:
     int n = X.n_cols;
     arma::vec beta = x(arma::span(0,n-1));
     double threshold = x(n);
+    if(std::isnan(threshold)){
+      throw 20;
+    }
+    if(std::isinf(threshold)){
+      throw 20;
+    }
     arma::vec tmp0 = arma::exp2(X*beta);
     arma::vec tmp1 = alpha0*threshold+alpha%tmp0;
 
     tmp = y%log(tmp1)-tmp1;
-
+    if(std::isnan(tmp)){
+      throw 20;
+    }
+    if(std::isinf(tmp)){
+      throw 20;
+    }
     arma::mat pen10 = beta.t()*preci1*beta;
     double pen1 = pen10(0,0);
-    return -arma::sum(tmp)+pen1/2.0+pow((threshold-threshold0),2)*preci2/2.0;
+    res = -arma::sum(tmp)+pen1/2.0+pow((threshold-threshold0),2)*preci2/2.0;
+    if(std::isnan(res)){
+      throw 20;
+    }
+    if(std::isinf(res)){
+      throw 20;
+    }
+    return res;
   }
 
   void Gradient(const arma::vec &x, arma::vec &gr) override {
@@ -212,44 +230,68 @@ List PoisthNorm_paraOptall(arma::mat& Y,
 
   int n = X.n_cols;
   int m = Y.n_cols;
+  Rcout << "number of rows: "<< m << " \n";
   arma::mat par(n+1,m);
+  arma::mat fake_par(n+2,m);
   // arma::vec hes_det(m);
   // arma::vec hes_det1(m);
   arma::vec conv(m);
   List hes(m);
+  
+  double mynan = std::numeric_limits<double>::quiet_NaN();
+  //set each element of the fake parameter matrix to nan
+  for (int k=0; k<m;k++){
+    for (int j=0; j<n+2; j++){
+      fake_par.col(k)[j]=mynan;
+    }
+  }
+  int failcount = 0;
   if(sizescale) {
     for(int i=0; i < m; i++){
-      List result = PoisthNorm_paraOptfeat(Y.col(i),X,
-                                           threshold0(i)*alpha0,
-                                           threshold0(i)*alpha,
-                                           preci1,
-                                           preci2,
-                                           1.0,
-                                           calhes);
-      par.col(i) = (as<arma::vec>(result["par"]));
-      // hes_det(i) = result["hes_det"];
-      // hes_det1(i) = result["hes_det1"];
-      hes[i] = result["hes"];
-      conv(i) = result["conv"];
+      try{
+        List result = PoisthNorm_paraOptfeat(Y.col(i),X,
+                                             threshold0(i)*alpha0,
+                                             threshold0(i)*alpha,
+                                             preci1,
+                                             preci2,
+                                             1.0,
+                                             calhes);
+        par.col(i) = (as<arma::vec>(result["par"]));
+        hes[i] = result["hes"];
+        conv(i) = result["conv"];
+      }
+      catch{
+        par.col(i) = fake_par.col(i);
+        hes[i] = mynan;
+        conv(i) = mynan;
+        failcount++;
+      }
     }
   } else {
     for(int i=0; i < m; i++){
-      List result = PoisthNorm_paraOptfeat(Y.col(i),X,
-                                           alpha0,
-                                           alpha,
-                                           preci1,
-                                           preci2,
-                                           threshold0(i),
-                                           calhes);
-      par.col(i) = (as<arma::vec>(result["par"]));
-      // hes_det(i) = result["hes_det"];
-      // hes_det1(i) = result["hes_det1"];
-      hes[i] = result["hes"];
-      conv(i) = result["conv"];
+      try{
+        List result = PoisthNorm_paraOptfeat(Y.col(i),X,
+                                             alpha0,
+                                             alpha,
+                                             preci1,
+                                             preci2,
+                                             threshold0(i),
+                                             calhes);
+        par.col(i) = (as<arma::vec>(result["par"]));
+        hes[i] = result["hes"];
+        conv(i) = result["conv"];
+      }
+      catch{
+        par.col(i) = fake_par.col(i);
+        hes[i] = mynan;
+        conv(i) = mynan;
+        failcount++;
+      }
   }
 
 
   }
+  Rcout << "failed rows: " << failcount << "\n";
   return List::create(Named("par") = par,
                       Named("conv") = conv,
                       Named("hes") = hes);
