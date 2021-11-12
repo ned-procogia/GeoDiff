@@ -5,6 +5,7 @@
 
 #include <roptim.h>
 // [[Rcpp::depends(roptim)]]
+using namespace std;
 using namespace Rcpp;
 using namespace roptim;
 
