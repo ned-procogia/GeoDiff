@@ -1,5 +1,5 @@
-#include <cmath>  // std::pow
-
+#include <cmath>
+#include "GeoDiff.h"
 #include <RcppArmadillo.h>
 // [[Rcpp::depends(RcppArmadillo)]]
 
@@ -8,7 +8,7 @@
 using namespace std;
 using namespace Rcpp;
 using namespace roptim;
-
+using namespace std;
 // This is a simple example of exporting a C++ function to R. You can
 // source this function into an R session using the Rcpp::sourceCpp
 // function (or via the Source button on the editor toolbar). Learn
@@ -93,7 +93,8 @@ using namespace roptim;
 
 
 
-
+//function used to model data as a normalized poisson distribution.
+// Catches to throw exceptions on nans and infs included so that roptim throws exceptions
 class PoisthNorm_paranll : public Functor {
 public:
   arma::vec y;
@@ -123,15 +124,16 @@ public:
     arma::vec tmp1 = alpha0*threshold+alpha%tmp0;
 
     tmp = y%log(tmp1)-tmp1;
-    if(std::isnan(tmp)){
+    //need to use .has_nan/inf here because tmp is an arma object
+    if(tmp.has_nan()){
       throw 20;
     }
-    if(std::isinf(tmp)){
+    if(tmp.has_inf()){
       throw 20;
     }
     arma::mat pen10 = beta.t()*preci1*beta;
     double pen1 = pen10(0,0);
-    res = -arma::sum(tmp)+pen1/2.0+pow((threshold-threshold0),2)*preci2/2.0;
+    double res = -arma::sum(tmp)+pen1/2.0+pow((threshold-threshold0),2)*preci2/2.0;
     if(std::isnan(res)){
       throw 20;
     }
@@ -261,7 +263,7 @@ List PoisthNorm_paraOptall(arma::mat& Y,
         hes[i] = result["hes"];
         conv(i) = result["conv"];
       }
-      catch{
+      catch(...){
         par.col(i) = fake_par.col(i);
         hes[i] = mynan;
         conv(i) = mynan;
@@ -282,7 +284,7 @@ List PoisthNorm_paraOptall(arma::mat& Y,
         hes[i] = result["hes"];
         conv(i) = result["conv"];
       }
-      catch{
+      catch(...){
         par.col(i) = fake_par.col(i);
         hes[i] = mynan;
         conv(i) = mynan;
