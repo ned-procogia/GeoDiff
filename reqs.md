@@ -14,7 +14,7 @@ specifications: https://github.com/Nanostring-Biostats/GeoDiff/blob/main/specs.m
 
 
 #### Reqs for diagPoisBG:
-- The user input object, a GeoMx S4 class (either matrix or sparse matrix)
+- The user input object, a GeoMx S4 class
 - The user input an indicator variable on whether using results from multiple slides: split
 - The user input whether to adjust p value: padj (default TRUE)
 - The user input adjust p value method: padj_method (default "BH") 
@@ -54,7 +54,7 @@ specifications: https://github.com/Nanostring-Biostats/GeoDiff/blob/main/specs.m
 
 
 #### Reqs for fitNBth
-- The user input a GeoMx S4 class (either matrix or sparse matrix)
+- The user input a GeoMx S4 class
 - The user input an indicator variable on whether using results from multiple slides: split
 - The user input vector of high features names: features_high (If NULL, the default value is calculated within the function)
 - The user input size factor for background: sizefact_BG (If NULL, the default value is calculated within the function)
@@ -82,7 +82,7 @@ specifications: https://github.com/Nanostring-Biostats/GeoDiff/blob/main/specs.m
 
 
 #### Reqs for fitPoisthNorm  
-- The user input a GeoMx S4 class (either matrix or sparse matrix)
+- The user input a GeoMx S4 class
 - The user input an indicator variable on whether using results from multiple slides: split
 - The user input vector of high ROIs names: ROIs_high (If NULL, the default value is calculated within the function)
 - The user input vector of high features names: features_high (If NULL, the default value is calculated within the function)
