@@ -1,7 +1,7 @@
 
 
 #### Reqs for fitPoisBG:
-- The user input object, a GeoMx S4 class
+- The user input object, a GeoMx S4 class (either matrix or sparse matrix)
 - The user input the group variable name for slide id of ROIs: groupvar
 - The user input the size_scale from "sum", "first" for sizefact (default "sum")
 - The user input iteration tolerance: tol (default 1e-3)
@@ -14,7 +14,7 @@ specifications: https://github.com/Nanostring-Biostats/GeoDiff/blob/main/specs.m
 
 
 #### Reqs for diagPoisBG:
-- The user input object, a GeoMx S4 class
+- The user input object, a GeoMx S4 class (either matrix or sparse matrix)
 - The user input an indicator variable on whether using results from multiple slides: split
 - The user input whether to adjust p value: padj (default TRUE)
 - The user input adjust p value method: padj_method (default "BH") 
@@ -39,7 +39,7 @@ specifications: https://github.com/Nanostring-Biostats/GeoDiff/blob/main/specs.m
 
 
 #### Reqs for BGScoreTest:
-- The user input a GeoMx S4 class
+- The user input a GeoMx S4 class (either matrix or sparse matrix)
 - The user input an indicator variable on whether using results from multiple slides: split
 - The user input adjustment factor: adj (default 1)
 - The user input whether to use outlier detection and remove outlier: removeoutlier (default FALSE)
@@ -54,7 +54,7 @@ specifications: https://github.com/Nanostring-Biostats/GeoDiff/blob/main/specs.m
 
 
 #### Reqs for fitNBth
-- The user input a GeoMx S4 class
+- The user input a GeoMx S4 class (either matrix or sparse matrix)
 - The user input an indicator variable on whether using results from multiple slides: split
 - The user input vector of high features names: features_high (If NULL, the default value is calculated within the function)
 - The user input size factor for background: sizefact_BG (If NULL, the default value is calculated within the function)
@@ -82,7 +82,7 @@ specifications: https://github.com/Nanostring-Biostats/GeoDiff/blob/main/specs.m
 
 
 #### Reqs for fitPoisthNorm  
-- The user input a GeoMx S4 class
+- The user input a GeoMx S4 class (either matrix or sparse matrix)
 - The user input an indicator variable on whether using results from multiple slides: split
 - The user input vector of high ROIs names: ROIs_high (If NULL, the default value is calculated within the function)
 - The user input vector of high features names: features_high (If NULL, the default value is calculated within the function)
@@ -141,7 +141,7 @@ specifications: https://github.com/Nanostring-Biostats/GeoDiff/blob/main/specs.m
 
 
 #### Reqs for fitNBthDE
-- The user input a GeoMx S4 class 
+- The user input a GeoMx S4 class (either matrix or sparse matrix)
 - The user input form: model formula
 - The user input an indicator variable on whether using results from multiple slides: split
 - The user input features_high: features with high abudance to be run in iter=1
@@ -179,7 +179,7 @@ specifications: https://github.com/Nanostring-Biostats/GeoDiff/blob/main/specs.m
 
 #### Reqs for fitNBthmDE
 
-- The user input a GeoMx S4 class
+- The user input a GeoMx S4 class 
 - The user input form: model formula
 - The user input an indicator variable on whether using results from multiple slides: split
 - The user input features_all: vector of features to be run.
