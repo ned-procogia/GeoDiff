@@ -1,3 +1,4 @@
+
 #include <cmath>
 #include "GeoDiff.h"
 #include <Rcpp.h>
@@ -23,58 +24,82 @@ using namespace roptim;
 // (useful for testing and development). The R code will be automatically
 // run after the compilation.
 //
-
-// Memoization structure to hold the hash map
-//https://stackoverflow.com/questions/36972904/memoise-an-rcpp-function
-struct mem_map{
-  
-  // Initializer to create the static (presistent) map
-  static std::map<int, double> create_map()
-  {
-    std::map<int, double> m;
-    m.clear();
-    return m;
-  }
-  
-  // Name of the static map for the class
-  static std::map<int, double> memo;
-  
-};
-
-// Actuall instantiate the class in the global scope (I know, bad me...)
-std::map<int, double> mem_map::memo =  mem_map::create_map();
-// Reset the map
-// [[Rcpp::export]]
-void clear_mem(){
-  mem_map::memo.clear();
-}
-
-// Get the values of the map.
-// [[Rcpp::export]]
-std::map<int, double> get_mem(){
-  return mem_map::memo;
-}
-std::hash<double> hash_double;
 // trying to make the vectorized 
 arma::vec ref_dnbinom_mu_vec(const arma::vec &y, 
                              const double r, 
                              const arma::vec &tmp1){
   int N = y.n_elem;
   arma::vec prob(N);
-  // for(int i=0; i<N; i++){
-  //   int j = hash_double(y(i)+tmp1(i));
-  //   if(mem_map::memo.count(j) > 0){
-  //     prob(i) =  mem_map::memo[i];}
-  //   else{
-  //     prob(i) = R::dnbinom_mu(y(i), r, tmp1(i), 1);
-  //     mem_map::memo[j] = prob(i);
-  //   }
-  // }
-  // mem_map::memo.clear();
   for(int i=0; i<N; i++)
     prob(i) = R::dnbinom_mu(y(i), r, tmp1(i), 1);
+  //mem_map::memo.clear();
   return(prob);
 }
+
+arma::vec approx_dnbinom_mu_vec(const arma::vec &x_vec, 
+                             const double s, 
+                             const arma::vec &mu_vec){
+  int N = x_vec.n_elem;
+  arma::vec prob(N);
+  double s_pi_binom = 0;
+  if(s==0){
+    Rcout << "s=0 \n";
+    s_pi_binom = 0; //binomial coefficient part from size and 0.5*log2pi
+  }
+  else{
+    //Rcout << "p: "<< p << " \n";
+    s_pi_binom = lgamma(s+1); //binomial coefficient part from size and 0.5*log2pi
+  }
+  double x_s_binom = 0; 
+  double x_binom = 0; 
+  double one_minus_p = 0; //log of (1-mu/x+mu)^x
+  double logp = 0; //log of (mu/x+mu)^s
+  double p =0;
+  for(int i=0; i<N; i++){
+    if (x_vec(i)==0){
+      prob(i) = mu_vec(i);
+    }
+    else{
+      p = mu_vec(i)/(x_vec(i)+mu_vec(i));
+      //Rcout << "p: "<< p << " \n";
+      x_s_binom = lgamma(x_vec(i)-s);
+      x_binom = lgamma(x_vec(i));
+      if(p==1){
+        one_minus_p = 0;
+      }
+      else{
+        one_minus_p = x_vec(i)*log(1-p);;
+      }
+  
+      //Rcout << "one_minus_p: "<< one_minus_p << " \n";
+      logp = s*log(p);
+      //Rcout << "logp: "<< logp << " \n";
+      //Rcout << "s_pi_binom: "<< s_pi_binom << " \n";
+      prob(i) = x_s_binom - x_binom + one_minus_p + logp - s_pi_binom;
+      if(prob(i)>1)
+        prob(i)=1;
+    }
+    // if(std::isinf(prob(i))){
+    //   Rcout << "p: "<< p << " \n";
+    //   Rcout << "x_s_binom: "<< x_s_binom << " \n";
+    //   Rcout << "x_binom: "<< x_binom << " \n";
+    //   Rcout << "one_minus_p: "<< one_minus_p << " \n";
+    //   Rcout << "logp: "<< logp << " \n";
+    //   Rcout << "s_pi_binom: "<< s_pi_binom << " \n";
+    // }
+    // if(x_vec(i)!=0){
+    //   Rcout << "x_vec(i): "<< x_vec(i) << "\n";
+    //   Rcout << "s: "<< s << "\n";
+    //   Rcout << "mu_vec(i): "<< mu_vec(i) << "\n";
+    //   Rcout << "correct: "<< R::dnbinom_mu(x_vec(i), s, mu_vec(i), 1) << " \n";
+    //   Rcout << "calculated: "<< prob(i) << " \n";
+    //   Rcout << "calculated/correct" <<prob(i)/R::dnbinom_mu(x_vec(i), s, mu_vec(i), 1) << " \n";
+    //   Rcout << "calculated+2/correct" <<(2+prob(i))/R::dnbinom_mu(x_vec(i), s, mu_vec(i), 1) << " \n";
+    // }
+  }
+  return(prob);
+}
+
 
 class NBthDE_paranll : public Functor {
 public:
@@ -101,52 +126,31 @@ public:
     
     double threshold = x(n+1);
     
-    //auto starttmp0 = high_resolution_clock::now();
-    //tmp0 = arma::exp2(X*beta);
-    //auto stoptmp0 = high_resolution_clock::now();
-    //auto durationtmp0 = duration_cast<microseconds>(stoptmp0 - starttmp0);
-    //Rcout << "duration tmp0: "<< durationtmp0.count() << " \n";
-    
-    //auto starttmp01 = high_resolution_clock::now();
     arma::vec tmpneg1 = X*beta;
     tmp0 = arma::zeros<arma::vec>(tmpneg1.n_elem);
     for(int l=0;l<tmpneg1.n_elem;l++){
       tmp0(l) = pow(2.0, tmpneg1(l));
     }
-    //auto stoptmp01 = high_resolution_clock::now();
-    //auto durationtmp01 = duration_cast<microseconds>(stoptmp01 - starttmp01);
-    //Rcout << "duration tmp01: "<< durationtmp01.count() << " \n";
-    
-    
-    //auto starttmp1 = high_resolution_clock::now();
     tmp1 = alpha0*threshold+alpha%tmp0; // % here is element-wise multiplication
-    //auto stoptmp1 = high_resolution_clock::now();
-    //auto durationtmp1 = duration_cast<microseconds>(stoptmp1 - starttmp1);
-    //Rcout << "duration tmp1: "<< durationtmp1.count() << " \n";
     
-    //auto start = high_resolution_clock::now();
+
     arma::vec llk = ref_dnbinom_mu_vec(y, r, tmp1); //rate-limiting step
-    //auto stop = high_resolution_clock::now();
-    //auto duration = duration_cast<microseconds>(stop - start);
-    //Rcout << "duration llk: "<< duration.count() << " \n";
-    
+
+    // arma::vec approx_llk = approx_dnbinom_mu_vec(y, r, tmp1);
+    // 
+    // Rcout << "sum(llk): "<< sum(llk) << " \n";
+    // Rcout << "sum(approx_llk): "<< sum(approx_llk) << " \n";
+    // Rcout << "sum(llk)-sum(approx_llk): "<< sum(llk)- sum(approx_llk)<< " \n";
+    // 
     if (std::isinf(sum(llk))){
       throw 20;
     }
     
-    //auto startpen10 = high_resolution_clock::now();
     arma::mat pen10 = beta.t()*preci1*beta;
     
     double pen1 = pen10(0,0)/2.0;
-    //auto stoppen10 = high_resolution_clock::now();
-    //auto durationpen10 = duration_cast<microseconds>(stoppen10 - startpen10);
-    //Rcout << "duration pen10: "<< durationpen10.count() << " \n";
     
-    //auto startresult = high_resolution_clock::now();
     double result = -arma::sum(llk)+pen1+(1.0/2.0)*pow((threshold-threshold0),2)*preci2;
-    //auto stopresult = high_resolution_clock::now();
-    //auto durationresult = duration_cast<microseconds>(stopresult - startresult);
-    //Rcout << "duration result: "<< durationresult.count() << " \n";
     
     return(result);
   }
@@ -165,11 +169,7 @@ public:
     double r = x(n);
     double threshold = x(n+1);
     
-    //auto starttmp2 = high_resolution_clock::now();
     arma::vec tmp2 = (y/tmp1-1.0)/(1.0+tmp1/r);
-    //auto stoptmp2 = high_resolution_clock::now();
-    //auto durationtmp2 = duration_cast<microseconds>(stoptmp2 - starttmp2);
-    //Rcout << "duration tmp2: "<< durationtmp2.count() << " \n";
     
     //auto start1 = high_resolution_clock::now();
     gr(arma::span(0,n-1)) = -log(2.0)*X.t()*(tmp2%alpha%tmp0)+preci1.t()*beta;  //rate-limiting step
@@ -179,66 +179,45 @@ public:
     //gr(arma::span(0,n-1)) = -log(2.0)*X.t()*(tmp2%alpha%tmp0)+preci1.t()*beta;  //rate-limiting step
     
     
-    // auto start2 = high_resolution_clock::now();
-    // arma::vec tmp4 = 1 + tmp1/r;//rate-limiting step
+    //auto start2 = high_resolution_clock::now();
+    arma::vec tmp4 = 1 + tmp1/r;//rate-limiting step
     //arma::vec pLr = -arma::log(tmp4);//rate-limiting step
-    // arma::vec pLr = arma::zeros<arma::vec>(tmp4.n_elem);
-    // for(int k = 0; k < m; k++){
-    //   pLr(k) = -log(tmp4(k));
-    // }
-    // auto stop2 = high_resolution_clock::now();
-    // auto duration2 = duration_cast<microseconds>(stop2 - start2);
-    // Rcout << "duration log matrix: "<< duration2.count() << " \n";
-    
+    arma::vec pLr = arma::zeros<arma::vec>(tmp4.n_elem);
+    for(int k = 0; k < m; k++){
+      pLr(k) = -log(tmp4(k));
+    }
+    //auto stop2 = high_resolution_clock::now();
+    //auto duration2 = duration_cast<microseconds>(stop2 - start2);
+    //Rcout << "duration log matrix: "<< duration2.count() << " \n";
+
     //auto start3 = high_resolution_clock::now();
-    // for(int k = 0; k < m; k++){
-    //   for(int j = 0; j < y(k); j++){
-    //     pLr(k) += 1.0/(j+r);
-    //   }
-    // }
+    for(int k = 0; k < m; k++){
+      for(int j = 0; j < y(k); j++){
+        pLr(k) += 1.0/(j+r);
+      }
+    }
     //auto stop3 = high_resolution_clock::now();
     //auto duration3 = duration_cast<microseconds>(stop3 - start3);
     //Rcout << "duration plr as is: "<< duration3.count() << " \n";
     
     //auto start4 = high_resolution_clock::now();
     arma::vec tmp5 = 1 + tmp1/r;//rate-limiting step
-    arma::vec pLr = arma::zeros<arma::vec>(tmp5.n_elem);
+    arma::vec pLr2 = arma::zeros<arma::vec>(tmp4.n_elem);
     for(int k = 0; k < m; k++){
-      pLr(k) = -log(tmp5(k));
+      pLr2(k) = -log(tmp4(k));
       for(int j = 0; j < y(k); j++){
-        pLr(k) += 1.0/(j+r);
+        pLr2(k) += 1.0/(j+r);
       }
     }
-    pLr += -(y-tmp1)/(r+tmp1);
-    gr(n) = -arma::sum(pLr);
     //auto stop4 = high_resolution_clock::now();
     //auto duration4 = duration_cast<microseconds>(stop4 - start4);
     //Rcout << "duration plr fancy: "<< duration4.count() << " \n";
     
-    //auto start5 = high_resolution_clock::now();
-    arma::vec tmp52 = 1 + tmp1/r;//rate-limiting step
-    double running_total = 0;
-    for(int k = 0; k < m; k++){
-      running_total += -log(tmp52(k));
-      for(int j = 0; j < y(k); j++){
-        running_total += 1.0/(j+r);
-      }
-      running_total += -(y(k)-tmp1(k))/(r+tmp1(k));
-    }
-    
-    //auto stop5 = high_resolution_clock::now();
-    //auto duration5 = duration_cast<microseconds>(stop5 - start5);
-    //Rcout << "duration just sum: "<< duration5.count() << " \n";
-    //Rcout << "gr(n): "<< gr(n) << " \n";
-    //Rcout << "-running_total: "<< -running_total << " \n";
-    
-    //auto start4tmp3 = high_resolution_clock::now();
+    pLr += -(y-tmp1)/(r+tmp1);
+    gr(n) = -arma::sum(pLr);
     arma::mat tmp3 = tmp2.t()*alpha0;
     
     gr(n+1) = -tmp3(0,0)+(threshold-threshold0)*preci2;
-    //auto stop4tmp3 = high_resolution_clock::now();
-    //auto duration4tmp3 = duration_cast<microseconds>(stop4tmp3 - start4tmp3);
-    //Rcout << "duration plr fancy: "<< duration4tmp3.count() << " \n";
     
   }
   
@@ -351,8 +330,8 @@ List NBthDE_paraOptall(arma::sp_mat &Y,
         failcount++;
       }
     }
-    //Rcout << "vector_time: "<< vector_time/m << " \n";
-    //Rcout << "optim_time: "<< optim_time/m << " \n";
+    Rcout << "vector_time: "<< vector_time/m << " \n";
+    Rcout << "optim_time: "<< optim_time/m << " \n";
   } else {
     for(int i=0; i < m; i++){
       try{
