@@ -39,54 +39,31 @@ arma::vec ref_dnbinom_mu_vec(const arma::vec &y,
 arma::vec approx_dnbinom_mu_vec(const arma::vec &x_vec, 
                              const double s, 
                              const arma::vec &mu_vec){
+  //function based on reading the #$%^& R documents of dnbinom!!!
   int N = x_vec.n_elem;
   arma::vec prob(N);
-  double s_pi_binom = 0;
-  if(s==0){
-    Rcout << "s=0 \n";
-    s_pi_binom = 0; //binomial coefficient part from size and 0.5*log2pi
-  }
-  else{
-    //Rcout << "p: "<< p << " \n";
-    s_pi_binom = lgamma(s+1); //binomial coefficient part from size and 0.5*log2pi
-  }
-  double x_s_binom = 0; 
-  double x_binom = 0; 
-  double one_minus_p = 0; //log of (1-mu/x+mu)^x
-  double logp = 0; //log of (mu/x+mu)^s
+  double s_binom = lgamma(s);
   double p =0;
   for(int i=0; i<N; i++){
-    if (x_vec(i)==0){
-      prob(i) = mu_vec(i);
+    if (x_vec(i)==0 && mu_vec(i)==0){
+      prob(i) = 0;
     }
     else{
-      p = mu_vec(i)/(x_vec(i)+mu_vec(i));
-      //Rcout << "p: "<< p << " \n";
-      x_s_binom = lgamma(x_vec(i)-s);
-      x_binom = lgamma(x_vec(i));
-      if(p==1){
-        one_minus_p = 0;
-      }
-      else{
-        one_minus_p = x_vec(i)*log(1-p);;
-      }
-  
-      //Rcout << "one_minus_p: "<< one_minus_p << " \n";
-      logp = s*log(p);
-      //Rcout << "logp: "<< logp << " \n";
-      //Rcout << "s_pi_binom: "<< s_pi_binom << " \n";
-      prob(i) = x_s_binom - x_binom + one_minus_p + logp - s_pi_binom;
-      if(prob(i)>1)
-        prob(i)=1;
+      p = s/(s+mu_vec(i));
+      prob(i) = lgamma(s+x_vec(i)) - s_binom - lgamma(x_vec(i)+1) + s*log(p) + x_vec(i)*log(1-p);
     }
-    // if(std::isinf(prob(i))){
-    //   Rcout << "p: "<< p << " \n";
-    //   Rcout << "x_s_binom: "<< x_s_binom << " \n";
-    //   Rcout << "x_binom: "<< x_binom << " \n";
-    //   Rcout << "one_minus_p: "<< one_minus_p << " \n";
-    //   Rcout << "logp: "<< logp << " \n";
-    //   Rcout << "s_pi_binom: "<< s_pi_binom << " \n";
-    // }
+    if(std::isinf(prob(i))){
+      //Rcout << "x: "<< x_vec(i) << " \n";
+      //Rcout << "s: "<< s << " \n";
+      //Rcout << "mu: "<< mu_vec(i) << " \n";
+      prob(i) = 0; //check this doesn't wreck everything
+    }
+    if(std::isnan(prob(i))){ // in some instances r can go to nan, this catches that
+      //Rcout << "x: "<< x_vec(i) << " \n";
+      //Rcout << "s: "<< s << " \n";
+      //Rcout << "mu: "<< mu_vec(i) << " \n";
+      prob(i) = 0; //check this doesn't wreck everything
+    }
     // if(x_vec(i)!=0){
     //   Rcout << "x_vec(i): "<< x_vec(i) << "\n";
     //   Rcout << "s: "<< s << "\n";
@@ -133,19 +110,29 @@ public:
     }
     tmp1 = alpha0*threshold+alpha%tmp0; // % here is element-wise multiplication
     
-
-    arma::vec llk = ref_dnbinom_mu_vec(y, r, tmp1); //rate-limiting step
-
-    // arma::vec approx_llk = approx_dnbinom_mu_vec(y, r, tmp1);
+    // auto start1 = high_resolution_clock::now();
+    //arma::vec alt_llk = ref_dnbinom_mu_vec(y, r, tmp1); //rate-limiting step
+    // auto stop1 = high_resolution_clock::now();
+    // auto duration1 = duration_cast<microseconds>(stop1 - start1);
+    // Rcout << "duration original: "<< duration1.count() << " \n";
     // 
-    // Rcout << "sum(llk): "<< sum(llk) << " \n";
-    // Rcout << "sum(approx_llk): "<< sum(approx_llk) << " \n";
+    // auto start2 = high_resolution_clock::now();
+    arma::vec llk = approx_dnbinom_mu_vec(y, r, tmp1); //rate-limiting step
+    // auto stop2 = high_resolution_clock::now();
+    // auto duration2 = duration_cast<microseconds>(stop2 - start2);
+    // Rcout << "duration ned_opt: "<< duration2.count() << " \n";
+    // 
+    //Rcout << "sum(llk): "<< sum(llk) << " \n";
+    //Rcout << "sum(alt_llk): "<< sum(alt_llk) << " \n";
     // Rcout << "sum(llk)-sum(approx_llk): "<< sum(llk)- sum(approx_llk)<< " \n";
-    // 
+
     if (std::isinf(sum(llk))){
       throw 20;
     }
     
+    if (std::isnan(sum(llk))){
+      throw 20;
+    }
     arma::mat pen10 = beta.t()*preci1*beta;
     
     double pen1 = pen10(0,0)/2.0;
