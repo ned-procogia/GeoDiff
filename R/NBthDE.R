@@ -353,9 +353,9 @@ fitNBthDE_funct =     function(form, annot,
         bad = sapply(result,is.null)
         to_retry = 1:n_parallel
         to_retry = to_retry[bad]
-        print("need to retry")
-        print(to_retry)
         if(sum(bad)>0){
+          print("need to retry")
+          print(to_retry)
           more_results =  mclapply(to_retry, function(i) {
             my_len = length(features_all)
             start_index = (round(((i-1)*my_len/n_parallel))+1)
@@ -402,7 +402,7 @@ fitNBthDE_funct =     function(form, annot,
           my_len = length(features_all)
           start_index = (round(((i-1)*my_len/n_parallel))+1)
           end_index = round(i*my_len/n_parallel)
-          NBthDE_paraOptall(
+          GeoDiff:::NBthDE_paraOptall(
             t(object[features_all, ])[,start_index:end_index], X, sizefact_BG, sizefact,
             preci1, threshold_mean * probenum[features_all[start_index:end_index]], preci2,
             startpara, sizescalebythreshold, (iter == iterations))
@@ -417,7 +417,7 @@ fitNBthDE_funct =     function(form, annot,
             my_len = length(features_all)
             start_index = (round(((i-1)*my_len/n_parallel))+1)
             end_index = round(i*my_len/n_parallel)
-            NBthDE_paraOptall(
+            GeoDiff:::NBthDE_paraOptall(
               t(object[features_all, ])[,start_index:end_index], X, sizefact_BG, sizefact,
               preci1, threshold_mean * probenum[features_all[start_index:end_index]], preci2,
               startpara, sizescalebythreshold, (iter == iterations))
